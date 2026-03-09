@@ -38,3 +38,7 @@ zod = "^3.23.0"
 
 [dev-dependencies]
 watchdog = ">=3.0.0"
+
+[plugins.scale.kubernetes]
+app_name = "jac-mcp-playground"
+namespace = "jac-mcp-playground"

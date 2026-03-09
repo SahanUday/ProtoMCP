@@ -1,0 +1,76 @@
+name: Deploy jac-mcp-playground with jac-scale
+
+on:
+  release:
+    types: [published]
+  workflow_dispatch:
+
+permissions:
+  id-token: write
+  contents: read
+
+jobs:
+  deploy-jac-mcp-playground:
+    if: github.event_name == 'workflow_dispatch' || startsWith(github.ref, 'refs/tags/jac-mcp-playground-') || startsWith(github.ref, 'refs/tags/v')
+    runs-on: ubuntu-latest
+
+    permissions:
+      id-token: write
+      contents: read
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Configure AWS Credentials
+        uses: aws-actions/configure-aws-credentials@v4.2.0
+        with:
+          aws-region: us-east-2
+          role-to-assume: arn:aws:iam::776241927220:role/GitHubActionsJaseciDeployRole
+          role-session-name: GitHubActions-JacMcpPlayground
+          audience: sts.amazonaws.com
+
+      - name: Update kubeconfig for EKS
+        run: |
+          aws eks update-kubeconfig --region us-east-2 --name jaseci-cluster
+          kubectl config current-context
+
+      - name: Set up Python 3.12
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+
+      - name: Install Jaseci packages
+        run: |
+          pip install --upgrade pip
+          pip install jaclang jac-client jac-scale
+
+      - name: Deploy jac-mcp-playground with jac-scale
+        run: |
+          jac start main.jac --scale
+
+      - name: Verify deployment
+        run: |
+          echo "Checking deployment status..."
+          kubectl get deployments -n jac-mcp-playground
+          kubectl get services -n jac-mcp-playground
+          kubectl get pods -n jac-mcp-playground
+
+      - name: Deployment Summary
+        if: always()
+        run: |
+          echo "## jac-mcp-playground Deployment Summary" >> $GITHUB_STEP_SUMMARY
+          echo "### Configuration" >> $GITHUB_STEP_SUMMARY
+          echo "- **App Name**: jac-mcp-playground" >> $GITHUB_STEP_SUMMARY
+          echo "- **Namespace**: jac-mcp-playground" >> $GITHUB_STEP_SUMMARY
+          echo "- **Cluster**: jaseci-cluster" >> $GITHUB_STEP_SUMMARY
+          echo "- **Region**: us-east-2" >> $GITHUB_STEP_SUMMARY
+          echo "- **Triggered By**: ${{ github.event_name }}" >> $GITHUB_STEP_SUMMARY
+          if [[ "${{ github.event_name }}" == "release" ]]; then
+            echo "- **Release Tag**: ${{ github.event.release.tag_name }}" >> $GITHUB_STEP_SUMMARY
+          fi
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "### Deployment Status" >> $GITHUB_STEP_SUMMARY
+          echo "\`\`\`" >> $GITHUB_STEP_SUMMARY
+          kubectl get all -n jac-mcp-playground 2>&1 >> $GITHUB_STEP_SUMMARY || echo "Unable to fetch deployment status" >> $GITHUB_STEP_SUMMARY
+          echo "\`\`\`" >> $GITHUB_STEP_SUMMARY
