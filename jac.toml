@@ -1,0 +1,40 @@
+[project]
+name = "jac-mcp-playground"
+version = "1.0.0"
+description = "MCP Playground – explore, test and debug MCP servers"
+entry-point = "main.jac"
+authors = ["Jaseci Labs"]
+license = "MIT"
+
+[serve]
+base_route_app = "app"
+
+[plugins.client.app_meta_data]
+title = "MCP Playground"
+description = "A Postman-style playground for Model Context Protocol (MCP) servers"
+keywords = "mcp, jaseci, jac, llm, tools, playground"
+author = "Jaseci Labs"
+theme_color = "#0f172a"
+icon = "/assets/mcp.png"
+
+[plugins.client.vite]
+plugins = ["tailwindcss()"]
+lib_imports = ["import tailwindcss from '@tailwindcss/vite'"]
+
+[dependencies.npm]
+jac-client-node = "1.0.4"
+tailwindcss = "latest"
+zod = "^3.23.0"
+"react-hook-form" = "^7.53.0"
+"@uiw/react-json-view" = "^2.0.0-alpha.30"
+"@monaco-editor/react" = "^4.6.0"
+"lucide-react" = "^0.468.0"
+"clsx" = "^2.1.1"
+"tailwind-merge" = "^3.0.0"
+
+[dependencies.npm.dev]
+"@jac-client/dev-deps" = "1.0.0"
+"@tailwindcss/vite" = "^4.1.17"
+
+[dev-dependencies]
+watchdog = ">=3.0.0"
