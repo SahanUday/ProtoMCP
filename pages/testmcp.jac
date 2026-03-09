@@ -15,10 +15,11 @@ cl {
         setActiveConnection = useMcpStore(lambda(s: Any) -> Any { return s.setActiveConnection; });
         client = useMcpClient();
 
-        has transport: str = "streamable-http";
-        has name: str = "";
-        has url: str = "";
-        has authType: str = "none";
+        _qp = Reflect.construct(URLSearchParams, [window.location.search]);
+        has transport: str = _qp.get("transport") or "streamable-http";
+        has name: str = _qp.get("name") or "";
+        has url: str = _qp.get("url") or "";
+        has authType: str = _qp.get("auth") or "none";
         has authValue: str = "";
         has authHeaderName: str = "X-API-Key";
         has urlError: str = "";

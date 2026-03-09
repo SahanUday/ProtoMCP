@@ -33,6 +33,9 @@ cl {
                         <Link to="/playground" className="px-3 py-1.5 rounded-lg text-sm font-medium text-muted-foreground hover:text-foreground hover:bg-muted/60 transition-colors">
                             Playground
                         </Link>
+                        <Link to="/mcpregistry" className="px-3 py-1.5 rounded-lg text-sm font-medium text-muted-foreground hover:text-foreground hover:bg-muted/60 transition-colors">
+                            MCP Servers List
+                        </Link>
                         <a href="https://modelcontextprotocol.io" target="_blank" rel="noopener noreferrer" className="flex items-center gap-1 px-3 py-1.5 rounded-lg text-sm font-medium text-muted-foreground hover:text-foreground hover:bg-muted/60 transition-colors">
                             Docs
                             <ExternalLink size={11} className="opacity-50"/>
