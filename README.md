@@ -23,9 +23,9 @@ Connect, explore, and debug any MCP server directly from your browser. No local 
   <p>
     <a href="https://jac-mcp-playground.jaseci.org/">
       <picture>
-        <source media="(prefers-color-scheme: dark)" srcset="/home/sahan/dev/jac-mcp-playground/assets/banner-dark.png">
-        <source media="(prefers-color-scheme: light)" srcset="./packages/hoppscotch-common/public/images/banner-light.png">
-        <img alt="Hoppscotch" src="./packages/hoppscotch-common/public/images/banner-dark.png">
+        <source media="(prefers-color-scheme: dark)" srcset="./assets/banner-dark.png">
+        <source media="(prefers-color-scheme: light)" srcset="./assets/banner-dark.png">
+        <img alt="Hoppscotch" src="./assets/banner-dark.png">
       </picture>
     </a>
   </p>
