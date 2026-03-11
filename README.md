@@ -1,53 +1,66 @@
-# MCP Playground
 
-A Postman-style interactive playground for **Model Context Protocol (MCP)** servers — explore, test, and debug MCP servers directly from your browser.
+<div align="center">
 
-[![MCP](https://img.shields.io/badge/MCP-v2024--11--05-blue)](https://modelcontextprotocol.io)
-[![Jac](https://img.shields.io/badge/Built%20with-Jac-orange)](https://jaseci.org)
-[![License](https://img.shields.io/badge/License-MIT-green)](LICENSE)
+<img src="assets/mcp.png" alt="JAC MCP Playground" width="120" />
+
+# JAC MCP Playground
+
+**A Postman-like web UI for Model Context Protocol servers**
+
+Connect, explore, and debug any MCP server directly from your browser. No local setup required.
+
+[![MCP](https://img.shields.io/badge/MCP-v2024--11--05-blue?style=flat-square)](https://modelcontextprotocol.io)
+[![Built with Jac](https://img.shields.io/badge/Built%20with-Jac-orange?style=flat-square)](https://jaseci.org)
+[![License: MIT](https://img.shields.io/badge/License-MIT-green?style=flat-square)](LICENSE)
+[![GitHub Stars](https://img.shields.io/github/stars/jaseci-labs/jac-mcp-playground?style=flat-square)](https://github.com/jaseci-labs/jac-mcp-playground/stargazers)
+
+[Get Started](#get-started) &nbsp;·&nbsp; [Features](#features) &nbsp;·&nbsp; [Contributing](#contributing)
+
+
+
+---
+
+  <p>
+    <a href="https://jac-mcp-playground.jaseci.org/">
+      <picture>
+        <source media="(prefers-color-scheme: dark)" srcset="/home/sahan/dev/jac-mcp-playground/assets/banner-dark.png">
+        <source media="(prefers-color-scheme: light)" srcset="./packages/hoppscotch-common/public/images/banner-light.png">
+        <img alt="Hoppscotch" src="./packages/hoppscotch-common/public/images/banner-dark.png">
+      </picture>
+    </a>
+  </p>
+
+</div>
 
 ## Features
 
-### 🔌 Universal MCP Server Connectivity
-- **Connect to any MCP server** via URL — whether public or private
-- **Dual transport support**:
-  - **Streamable HTTP** — Modern, session-aware transport (recommended)
-  - **SSE (Legacy)** — Server-Sent Events for older MCP servers
-- **Multiple authentication methods**:
-  - Bearer Token (OAuth2/JWT)
-  - API Key with custom header
-  - Basic Auth (Base64)
-  - No authentication for public servers
+### 🔌 Connect to Any MCP Server
+- Enter a server URL and connect in seconds
+- Supports **Streamable HTTP** (modern, session-aware) and **SSE** (legacy) transports
+- Authentication: Bearer Token, API Key, Basic Auth, or none
 
-### 🛠️ Complete Capability Exploration
-- **Tools** — Execute server tools with auto-generated forms from JSON Schema
-- **Prompts** — Invoke contextual prompts with arguments and preview generated messages
-- **Resources** — Browse exposed resources with content preview and MIME type detection
-- **Real-time discovery** — All capabilities fetched and displayed instantly upon connection
+### 🛠 Explore All Server Capabilities
+- **Tools** — Execute server tools with forms auto-generated from JSON Schema
+- **Prompts** — Invoke prompts with arguments and preview generated messages
+- **Resources** — Browse and preview resources with MIME type detection
+- **Live discovery** — All capabilities fetched and displayed instantly on connect
 
-### 📊 Live Request/Response Logging
-- **Real-time JSON-RPC logs** — Watch every request and response as it happens
-- **Timing data** — See how long each request takes
-- **Status indicators** — Visual feedback for pending, success, and error states
-- **Full history** — Access up to 200 recent requests with complete payloads
+### 📋 Real-Time Request Logs
+- Watch every JSON-RPC request and response as it happens
+- Timing data per request, visual status indicators (pending / success / error)
+- Full history of up to 200 requests with complete payloads
 
-### 🎨 Beautiful, Modern UI
-- **Dark mode by default** — Easy on the eyes for long debugging sessions
-- **Responsive design** — Works seamlessly on desktop, tablet, and mobile
-- **3-panel playground layout** — Server sidebar, capability explorer, and logs panel
-- **Smooth animations** — Polished transitions and micro-interactions
-- **Monaco Editor integration** — For editing JSON payloads and viewing code
+### 🗂 MCP Server Registry
+- Browse official MCP servers built into the app
+- Filter by transport (HTTP, SSE, STDIO) or search by name
+- One-click connect to any listed server
 
-### 🚀 Official MCP Server Registry
-- Browse **official MCP servers** from the registry
-- Filter by transport type (HTTP, SSE, STDIO)
-- Search by name, namespace, or description
-- **One-click testing** — Connect to any listed server instantly
-
-### 🔒 CORS-Friendly Architecture
-- **Built-in proxy walker** — Handles CORS automatically for cross-origin requests
-- **Session persistence** — Maintains MCP session IDs across requests
-- **Browser-based** — No local installation required for testing remote servers
+### ⚡ Built for Developer Productivity
+- Dark mode UI — comfortable for long sessions
+- 3-panel layout: server list · capability explorer · live logs
+- Monaco Editor (same as VS Code) for JSON payload editing
+- Session ID persistence — no manual header management
+- Built-in CORS proxy — no browser extension needed
 
 ## Advantages
 
@@ -64,56 +77,35 @@ A Postman-style interactive playground for **Model Context Protocol (MCP)** serv
 - **Built-in registry** — Discover official servers without searching documentation
 
 ### Developer Experience
-- **Hot reload** — Changes reflect instantly during development
 - **Type exploration** — See tool schemas and prompt arguments visually
 - **Error visibility** — Clear error messages with full response bodies
 - **Session debugging** — Inspect session IDs and transport behavior
 
-## What Makes It Unique
+## Get Started
 
-### Built with Jac (Jaseci Framework)
-This is one of the first **production MCP tools built entirely in Jac** — a revolutionary full-stack language that combines:
-- **Frontend** — React-like components (`cl` blocks)
-- **Backend** — Server-side walkers (`walker:pub`)
-- **Single language** — No context switching between JS/Python/Go
+### Option 1 — Use the Hosted Version
 
-### Postman-Inspired for MCP
-Just as Postman revolutionized API testing, MCP Playground brings the same experience to Model Context Protocol servers:
-- **Collection management** — Organize your MCP servers
-- **Environment switching** — Test against different servers
-- **Request history** — Reuse and inspect previous calls
+No setup required. Open the playground in your browser:
 
-### Session-Aware Architecture
-Unlike simple HTTP clients, MCP Playground **understands MCP sessions**:
-- Captures and reuses `mcp-session-id` headers
-- Handles SSE endpoint discovery automatically
-- Manages session lifecycle per connection
+**[https://jac-mcp-playground.jaseci.org/](https://jac-mcp-playground.jaseci.org/)**
 
-## Quick Start
+### Option 2 — Run Locally
 
-### Prerequisites
+**Prerequisites**
+
 ```bash
-# Install Jaseci CLI
 pip install jaclang jac-client
 ```
 
-### Development
+**Clone and start**
+
 ```bash
-# Clone the repository
 git clone https://github.com/jaseci-labs/jac-mcp-playground.git
 cd jac-mcp-playground
-
-# Start development server
 jac start main.jac
 ```
 
-Visit `http://localhost:8000` to start exploring MCP servers.
-
-### Deployment (Kubernetes)
-```bash
-# Deploy to your Kubernetes cluster
-jac start main.jac --scale
-```
+Open [http://localhost:8000](http://localhost:8000) in your browser.
 
 ## Usage Examples
 
@@ -124,42 +116,40 @@ jac start main.jac --scale
 4. Add authentication if required
 5. Click **Connect**
 
-### Execute a Tool
-1. Select a connected server
-2. Go to **Tools** tab
-3. Click on any tool
-4. Fill in the auto-generated form
-5. See the response instantly in the logs panel
+**Execute a Tool**
+1. Select a connected server from the sidebar
+2. Open the **Tools** tab and click any tool
+3. Fill in the auto-generated form and submit
+4. See the full JSON-RPC response in the logs panel
 
-### Browse Official Registry
+**Browse the Server Registry**
 1. Navigate to **MCP Servers List**
-2. Browse available servers
-3. Click **Test Server** on any entry
-4. Pre-filled connection form opens automatically
+2. Browse or search available servers
+3. Click **Test Server** — the connection form opens pre-filled
 
 ## Architecture
 
 ```
 ┌─────────────────────────────────────────────────────────────┐
-│                         Browser                              │
-│  ┌───────────┐  ┌──────────────┐  ┌─────────────────────┐  │
-│  │   React   │  │   MCP Store  │  │  MCP Client Hook    │  │
-│  │  (cl)     │  │ (Context)    │  │  (JSON-RPC)         │  │
-│  └─────┬─────┘  └──────┬───────┘  └──────────┬──────────┘  │
-│        └────────────────┴──────────────────────┘           │
-│                           │                                  │
-│                    HTTP POST                                 │
-└───────────────────────────┼──────────────────────────────────┘
+│                         Browser                             │
+│  ┌───────────┐  ┌──────────────┐  ┌─────────────────────┐   │
+│  │ jac-client│  │   MCP Store  │  │  MCP Client Hook    │   │
+│  │           |  │ (Context)    │  │  (JSON-RPC)         │   │
+│  └─────┬─────┘  └──────┬───────┘  └──────────┬──────────┘   │
+│        └───────────────┴─────────────────────┘              │
+│                           │                                 │
+│                       HTTP POST                             │
+└───────────────────────────┼─────────────────────────────────┘
                             │
-┌───────────────────────────▼──────────────────────────────────┐
-│                    Jac Runtime                                │
+┌───────────────────────────▼─────────────────────────────────┐
+│                    Jac Runtime                              │
 │  ┌─────────────────────────────────────────────────────┐    │
 │  │         mcp_proxy Walker (CORS Handler)             │    │
 │  │  • Forward requests to MCP server                   │    │
 │  │  • Handle SSE endpoint discovery                    │    │
 │  │  • Stream responses line-by-line                    │    │
 │  └──────────────────┬──────────────────────────────────┘    │
-└─────────────────────┼────────────────────────────────────────┘
+└─────────────────────┼───────────────────────────────────────┘
                       │
               ┌───────▼────────┐
               │  MCP Server    │
@@ -170,22 +160,74 @@ jac start main.jac --scale
 ## Tech Stack
 
 - **Framework**: [Jac (Jaseci)](https://jaseci.org) — Full-stack language
-- **Frontend**: React-like components via `cl` blocks
+- **Frontend**: jac-client
 - **Styling**: Tailwind CSS v4 with custom theme
 - **Editor**: Monaco Editor (VS Code editor component)
 - **Icons**: Lucide React
 - **Deployment**: Kubernetes via jac-scale
 
+## Why Jac?
+
+This project is one of the first production tools built entirely in **Jac** — a full-stack language from [Jaseci Labs](https://github.com/jaseci-labs) that eliminates the frontend/backend split. The entire application — UI components, server logic, routing, and the MCP proxy — lives in a single language with a unified developer experience.
+
 ## Contributing
 
-Contributions are welcome! Please feel free to submit a Pull Request.
+Contributions are welcome and appreciated! Here's how to get involved:
+
+### Reporting Bugs
+
+Search [existing issues](https://github.com/jaseci-labs/jac-mcp-playground/issues) first. If it's new, open one with:
+- A clear title and description
+- Steps to reproduce
+- Expected vs. actual behavior
+- Browser/OS details if relevant
+
+### Suggesting Features
+
+Open a [GitHub Discussion](https://github.com/jaseci-labs/jac-mcp-playground/discussions) or an issue tagged `enhancement`. Describe the use case, not just the solution.
+
+### Submitting a Pull Request
+
+1. **Fork** the repository and create a branch from `main`
+   ```bash
+   git checkout -b feat/your-feature-name
+   ```
+
+2. **Set up** your local environment
+   ```bash
+   pip install jaclang jac-client
+   git clone https://github.com/your-username/jac-mcp-playground.git
+   cd jac-mcp-playground
+   jac start main.jac
+   ```
+
+3. **Make your changes** — keep commits focused and write clear messages
+
+4. **Test** your changes locally against at least one MCP server
+
+5. **Open a PR** against `main` with:
+   - A description of what changed and why
+   - Screenshots or a short recording if it's a UI change
+   - Reference to the related issue (e.g. `Closes #42`)
+
+### What to Work On
+
+Check the [open issues](https://github.com/jaseci-labs/jac-mcp-playground/issues) for things labeled `good first issue` or `help wanted`.
+
+
 
 ## License
 
-MIT License — see [LICENSE](LICENSE) for details.
+MIT — see [LICENSE](LICENSE) for details.
 
-## Links
+---
 
-- [MCP Specification](https://modelcontextprotocol.io)
-- [Jac Documentation](https://jaseci.org)
-- [Jaseci Labs](https://github.com/jaseci-labs)
+<div align="center">
+
+**[Live Demo](https://jac-mcp-playground.jaseci.org/)** &nbsp;·&nbsp; [MCP Specification](https://modelcontextprotocol.io) &nbsp;·&nbsp; [Jac Docs](https://jaseci.org) &nbsp;·&nbsp; [Jaseci Labs](https://github.com/jaseci-labs)
+
+<sub>Built with ❤️ by <a href="https://github.com/jaseci-labs">Jaseci Labs</a></sub>
+
+</div>
+
+
