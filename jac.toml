@@ -39,5 +39,11 @@ tailwind-merge = "^3.0.0"
 "@jac-client/dev-deps" = "2.0.0"
 "@tailwindcss/vite" = "^4.1.17"
 
+[plugins.scale.kubernetes]
+app_name = "jac-mcp-playground"
+namespace = "jac-mcp-playground"
+mongodb_enabled = false
+redis_enabled = false
+
 [dev-dependencies]
 watchdog = ">=3.0.0"
