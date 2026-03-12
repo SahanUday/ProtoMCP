@@ -1,9 +1,8 @@
 """useMcpClient – hook that performs JSON-RPC calls against an MCP server.
 
-Routes all calls through the backend mcp_proxy walker which handles CORS.
+Routes all calls through the backend /api/mcp-proxy endpoint which handles CORS.
 """
 
-sv import from ..main { mcp_proxy }
 cl import from ..store.mcp_store { useMcpStore }
 
 cl {
@@ -47,7 +46,7 @@ cl {
         addHistoryEntry = useMcpStore(lambda(s: Any) -> Any { return s.addHistoryEntry; });
         updateHistoryEntry = useMcpStore(lambda(s: Any) -> Any { return s.updateHistoryEntry; });
 
-        # Core send function — routes through backend proxy walker
+        # Core send function — routes through backend proxy function
         def sendRpc(connection: Any, method: Any, params: Any = None) -> Any {
             async def _exec -> Any {
                 rpcReq = buildRpcRequest(method, params);
@@ -74,18 +73,19 @@ cl {
                 addHistoryEntry(histEntry);
 
                 try {
-                    result = await root spawn mcp_proxy(
-                        url=connection.url,
-                        body=rpcReq,
-                        headers=authHeaders,
-                        transport=connection.transport or "streamable-http"
-                    );
-
-                    resp = None;
-                    if result.reports and len(result.reports) > 0 {
-                        inner = result.reports[0];
-                        resp = inner[0] if inner and len(inner) > 0 else inner;
-                    }
+                    fetchResp = await fetch("/mcp-proxy", {
+                        "method": "POST",
+                        "headers": {"Content-Type": "application/json"},
+                        "body": JSON.stringify({
+                            "url": connection.url,
+                            "body": rpcReq,
+                            "headers": authHeaders,
+                            "transport": connection.transport or "streamable-http"
+                        })
+                    });
+                    rawJson = await fetchResp.json();
+                    # @restspec wraps in TransportResponse: {status, data: {result: ...}}
+                    resp = rawJson.data.result if rawJson and rawJson.data and rawJson.data.result else None;
                     durationMs = Date.now() - startMs;
 
                     if not resp or not resp.ok {
