@@ -35,8 +35,8 @@ cl {
                 });
             };
         }
-        def addHistoryEntry(entry: Any) -> None {
-            history = lambda(prev: Any) -> Any { return [entry].concat(prev).slice(0, 200); };
+        def addHistoryEntry(`entry: Any) -> None {
+            history = lambda(prev: Any) -> Any { return [`entry].concat(prev).slice(0, 200); };
         }
         def updateHistoryEntry(id: Any, patch: Any) -> None {
             history = lambda(prev: Any) -> Any {

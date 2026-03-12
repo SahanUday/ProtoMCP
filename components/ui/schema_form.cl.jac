@@ -120,9 +120,9 @@ cl {
     # ── Deep set helper ───────────────────────────────────────────────────────
     # Simple flat-key path setter (supports "key" and "key.subkey" paths)
 
-    def setNestedValue(obj: Any, path: Any, value: Any) -> Any {
+    def setNestedValue(`obj: Any, path: Any, value: Any) -> Any {
         parts = path.split(".");
-        result = {**obj};
+        result = {**`obj};
         current = result;
         i = 0;
         while i < len(parts) - 1 {

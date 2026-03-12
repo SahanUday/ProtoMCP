@@ -94,6 +94,16 @@ cl {
 
         servers = [
             {
+                "id": "jac-mcp",
+                "name": "Jac Language",
+                "namespace": "jaseci.org",
+                "transport": "http",
+                "description": "Official Jac programming language MCP server. Validate, format, and convert Jac code with access to full language docs, grammar, and examples.",
+                "url": "http://localhost:3002/mcp/",
+                "auth": "none",
+                "authRequired": False
+            },
+            {
                 "id": "github-copilot",
                 "name": "GitHub Copilot",
                 "namespace": "github.com",

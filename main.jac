@@ -1,5 +1,12 @@
 """MCP Playground Backend + Frontend entry point."""
 
+import urllib.request;
+import urllib.parse;
+import json;
+import urllib.error;
+
+import from mcp_server_launcher { _mcp_process }
+
 # ──────────────────────────────────────────────
 # Backend: CORS proxy walker for MCP requests
 # Forwards JSON-RPC calls to any MCP server URL
@@ -12,10 +19,6 @@ walker:pub mcp_proxy {
         transport: str = "streamable-http";
 
     can proxy with Root entry {
-        import urllib.request;
-        import urllib.parse;
-        import json;
-        import urllib.error;
 
         request_headers = {
             "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 Chrome/120 Safari/537.36",

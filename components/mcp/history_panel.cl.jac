@@ -6,7 +6,7 @@ cl import from ...store.mcp_store { useMcpStore }
 
 cl {
     def HistoryEntry(props: Any) -> JsxElement {
-        entry = props.entry;
+        `entry = props.entry;
 
         has expanded: bool = False;
 
@@ -22,13 +22,13 @@ cl {
             "pending": "border-warning/10 hover:border-warning/20"
         };
 
-        entryStatus = entry.status if entry else "pending";
+        entryStatus = `entry.status if `entry else "pending";
         entryIcon = statusIcon.success if entryStatus == "success" else (statusIcon.error if entryStatus == "error" else statusIcon.pending);
         entryBgCls = statusBg.success if entryStatus == "success" else (statusBg.error if entryStatus == "error" else statusBg.pending);
         entryStatusCls = "text-success" if entryStatus == "success" else ("text-destructive" if entryStatus == "error" else "text-warning");
-        entryTimestamp = entry.timestamp or "";
-        entryServerName = entry.serverName or "";
-        entryDuration = entry.durationMs;
+        entryTimestamp = `entry.timestamp or "";
+        entryServerName = `entry.serverName or "";
+        entryDuration = `entry.durationMs;
 
         return <div className={f"border rounded-lg overflow-hidden text-xs transition-colors {entryBgCls}"}>
             <button
@@ -36,7 +36,7 @@ cl {
                 onClick={lambda -> None { expanded = not expanded; }}
             >
                 {entryIcon}
-                <span className="flex-1 font-mono text-foreground/80 truncate">{entry.method}</span>
+                <span className="flex-1 font-mono text-foreground/80 truncate">{`entry.method}</span>
                 {entryDuration and <span className="flex items-center gap-0.5 text-muted-foreground/60"><Clock size={9}/>{entryDuration}ms</span>}
                 {<ChevronDown size={11} className="text-muted-foreground/40 flex-shrink-0"/> if expanded else <ChevronRight size={11} className="text-muted-foreground/40 flex-shrink-0"/>}
             </button>
@@ -49,15 +49,15 @@ cl {
 
                 <div>
                     <p className="text-muted-foreground mb-1 font-medium text-xs">Request</p>
-                    <JsonViewer data={entry.request} maxHeight="150px"/>
+                    <JsonViewer data={`entry.request} maxHeight="150px"/>
                 </div>
 
-                {entry.response and <div>
+                {`entry.response and <div>
                     <p className={f"mb-1 font-medium text-xs {entryStatusCls}"}>Response</p>
-                    <JsonViewer data={entry.response} maxHeight="200px"/>
+                    <JsonViewer data={`entry.response} maxHeight="200px"/>
                 </div>}
 
-                {entry.status == "pending" and <p className="text-warning text-xs italic">Waiting for response...</p>}
+                {`entry.status == "pending" and <p className="text-warning text-xs italic">Waiting for response...</p>}
             </div>}
         </div>;
     }
@@ -108,8 +108,8 @@ cl {
                     <p className="text-xs font-medium text-muted-foreground/60">No logs yet</p>
                     <p className="text-xs text-muted-foreground/40">Requests will appear here</p>
                 </div>}
-                {len(filtered) > 0 and filtered.map(lambda(entry: Any) -> Any {
-                    return <HistoryEntry key={entry.id} entry={entry}/>;
+                {len(filtered) > 0 and filtered.map(lambda(`entry: Any) -> Any {
+                    return <HistoryEntry key={`entry.id} entry={`entry}/>;
                 })}
             </div>
         </div>;
