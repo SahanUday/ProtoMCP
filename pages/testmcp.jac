@@ -124,7 +124,7 @@ cl {
                                 className="w-full bg-background border border-input rounded-lg px-4 py-2.5 text-sm text-foreground placeholder-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring/50 focus:border-ring transition-colors"
                             />
                             {urlError and <p className="text-xs text-destructive mt-1">{urlError}</p>}
-                            {(url.includes("localhost") or url.includes("127.0.0.1")) and window.location.hostname != "localhost" and window.location.hostname != "127.0.0.1" and
+                            {(url.includes("localhost") or url.includes("127.0.0.1")) and not url.includes("127.0.0.1:3002") and window.location.hostname != "localhost" and window.location.hostname != "127.0.0.1" and
                                 <div className="p-3 bg-warning/10 border border-warning/20 rounded-lg mt-1">
                                     <p className="text-xs text-warning font-medium">⚠ Local server detected</p>
                                     <p className="text-xs text-muted-foreground mt-1">
