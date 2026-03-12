@@ -99,7 +99,7 @@ cl {
                 "namespace": "jaseci.org",
                 "transport": "http",
                 "description": "Official Jac programming language MCP server. Validate, format, and convert Jac code with access to full language docs, grammar, and examples.",
-                "url": "http://localhost:3002/mcp/",
+                "url": "http://127.0.0.1:3002/mcp/",
                 "auth": "none",
                 "authRequired": False
             },
