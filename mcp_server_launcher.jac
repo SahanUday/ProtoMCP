@@ -1,38 +1,35 @@
-"""Launches the jac-mcp server as a background subprocess on import."""
+"""Launches the jac-mcp server in a background thread on import.
 
-import from subprocess { Popen, PIPE, STDOUT }
-import shutil;
-import atexit;
-import sys;
+Uses direct Python import instead of subprocess to avoid venv PATH issues
+in Kubernetes deployments (jac install puts jac-mcp in .jac/venv/ which
+the system jac binary can't access as a CLI plugin).
+"""
+
+import threading;
 import time;
 import urllib.request;
 
 def _start_mcp_server() -> Any {
-    jac_path = shutil.which("jac");
-    if not jac_path {
-        print("[jac-mcp] 'jac' command not found in PATH, skipping MCP server launch.");
+    try {
+        import from jac_mcp.server { JacMcpServer }
+    } except ImportError as e {
+        print(f"[jac-mcp] jac-mcp not installed, skipping: {e}");
         return None;
     }
-    print(f"[jac-mcp] Found jac at: {jac_path}");
+
+    print("[jac-mcp] Starting built-in MCP server...");
 
     try {
-        proc = Popen(
-            ["jac", "mcp", "--transport", "streamable-http", "--port", "3002", "--host", "127.0.0.1"],
-            stdout=sys.stderr,
-            stderr=STDOUT
-        );
+        server = JacMcpServer(transport="streamable-http", port=3002, host="127.0.0.1");
 
-        # Wait briefly and check if process is still alive
-        time.sleep(2);
-        exit_code = proc.poll();
-        if exit_code is not None {
-            print(f"[jac-mcp] Server exited immediately with code {exit_code}.");
-            return None;
-        }
+        # Run server in a daemon thread so it doesn't block app startup
+        thread = threading.Thread(target=server.start, daemon=True);
+        thread.start();
 
         # Wait for server to be ready (up to 15 seconds)
         ready = False;
         for i in range(15) {
+            time.sleep(1);
             try {
                 req = urllib.request.Request(
                     "http://127.0.0.1:3002/mcp/",
@@ -41,12 +38,12 @@ def _start_mcp_server() -> Any {
                     method="POST"
                 );
                 with urllib.request.urlopen(req, timeout=2) as resp {
-                    print(f"[jac-mcp] Server is ready on http://127.0.0.1:3002/mcp/ (took {i+2}s)");
+                    print(f"[jac-mcp] Server is ready on http://127.0.0.1:3002/mcp/ (took {i+1}s)");
                     ready = True;
                     break;
                 }
             } except Exception {
-                time.sleep(1);
+                0;
             }
         }
 
@@ -54,13 +51,7 @@ def _start_mcp_server() -> Any {
             print("[jac-mcp] Server started but not responding on port 3002 after 15s.");
         }
 
-        def _cleanup() -> None {
-            if proc and proc.poll() is None {
-                proc.terminate();
-            }
-        }
-        atexit.register(_cleanup);
-        return proc;
+        return thread;
     } except Exception as e {
         print(f"[jac-mcp] Failed to start built-in MCP server: {e}");
     }
