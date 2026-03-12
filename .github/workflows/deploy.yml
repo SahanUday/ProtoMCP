@@ -48,12 +48,7 @@ jobs:
       - name: Deploy jac-mcp-playground with jac-scale
         run: |
           jac start main.jac --scale
-
-      - name: Restart app pod to pick up new code
-        run: |
-          kubectl rollout restart deployment jac-mcp-playground -n jac-mcp-playground
-          kubectl rollout status deployment jac-mcp-playground -n jac-mcp-playground --timeout=120s
-
+          
       - name: Verify deployment
         run: |
           echo "Checking deployment status..."
