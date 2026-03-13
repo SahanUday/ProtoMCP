@@ -73,7 +73,7 @@ cl {
                 addHistoryEntry(histEntry);
 
                 try {
-                    fetchResp = await fetch("/mcp-proxy", {
+                    fetchResp = await fetch("/function/mcp_proxy", {
                         "method": "POST",
                         "headers": {"Content-Type": "application/json"},
                         "body": JSON.stringify({
