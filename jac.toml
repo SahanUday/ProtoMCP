@@ -23,6 +23,7 @@ lib_imports = ["import tailwindcss from '@tailwindcss/vite'"]
 
 [dependencies]
 jac-mcp = ">=0.1.3"
+jaclang = ">=0.12.0"
 
 [dependencies.npm]
 jac-client-node = "1.0.7"
