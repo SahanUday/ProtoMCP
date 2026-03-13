@@ -2,187 +2,20 @@
 
 cl import from "@jac/runtime" { useParams, useNavigate }
 cl import from "lucide-react" {
-    PanelLeftClose, PanelLeftOpen, ScrollText, Plus, Server, Trash2,
-    Wrench, MessageSquare, FolderOpen, RefreshCw, ChevronRight,
+    PanelLeftClose, PanelLeftOpen, ScrollText, Plus, Server,
+    Wrench, MessageSquare, FolderOpen, RefreshCw,
     Loader2, Search, Wifi, Radio, AlertTriangle
 }
 cl import from ...store.mcp_store { useMcpStore }
 cl import from ...hooks.useMcpClient { useMcpClient }
 cl import from ...components.mcp.history_panel { HistoryPanel }
 cl import from ...components.mcp.connect_modal { ConnectModal }
+cl import from ...components.playground.sidebar_item { SidebarItem }
+cl import from ...components.playground.tab_btn { TabBtn }
+cl import from ...components.playground.capability_items { ToolItem, PromptItem, ResourceItem }
+cl import from ...components.playground.empty_state { EmptyState }
 
 cl {
-    # ── Sidebar Server Item ─────────────────────────────────────────────────
-
-    def SidebarItem(props: Any) -> JsxElement {
-        conn = props.conn;
-        isActive = props.isActive or False;
-        onSelect = props.onSelect;
-        onRemove = props.onRemove;
-
-        statusColors = {
-            "connected": "bg-success",
-            "connecting": "bg-warning animate-pulse",
-            "error": "bg-destructive",
-            "disconnected": "bg-muted-foreground/40"
-        };
-
-        dotCls = statusColors[conn.status] if conn.status in statusColors else statusColors.disconnected;
-        transportLabel = "HTTP" if conn.transport == "streamable-http" else "SSE";
-
-        caps = conn.capabilities or {};
-        totalCaps = len(caps.tools or []) + len(caps.prompts or []) + len(caps.resources or []);
-
-        return <div
-            className={f"flex items-center gap-2.5 px-3 py-2.5 rounded-xl cursor-pointer transition-all group {
-                'bg-primary/10 border border-primary/20 shadow-sm shadow-primary/5' if isActive else 'hover:bg-muted/60 border border-transparent'
-            }"}
-            onClick={onSelect}
-        >
-            <span className={f"w-2 h-2 rounded-full flex-shrink-0 {dotCls}"}/>
-            <div className="flex-1 min-w-0">
-                <p className="text-sm font-medium text-foreground truncate">{conn.name}</p>
-                <p className="text-xs text-muted-foreground truncate mt-0.5">{conn.url}</p>
-            </div>
-            <div className="flex items-center gap-1.5 flex-shrink-0" onClick={lambda(e: Any) -> None { e.stopPropagation(); }}>
-                <span className="text-xs text-muted-foreground bg-muted px-1.5 py-0.5 rounded">{transportLabel}</span>
-                {conn.status == "connected" and totalCaps > 0 and <span className="text-xs text-primary bg-primary/10 px-1.5 py-0.5 rounded">{totalCaps}</span>}
-                <button
-                    onClick={onRemove}
-                    className="text-muted-foreground/30 hover:text-destructive p-1 rounded-lg hover:bg-muted transition-colors opacity-0 group-hover:opacity-100 cursor-pointer"
-                    title="Remove server"
-                >
-                    <Trash2 size={12}/>
-                </button>
-            </div>
-        </div>;
-    }
-
-    # ── Tab Button ──────────────────────────────────────────────────────────
-
-    def TabBtn(props: Any) -> JsxElement {
-        label = props.label;
-        icon = props.icon;
-        count = props.count;
-        active = props.active or False;
-        onClick = props.onClick;
-
-        return <button
-            className={f"flex items-center gap-1.5 px-4 py-2.5 text-sm font-medium border-b-2 transition-all cursor-pointer {
-                'border-primary text-primary' if active else 'border-transparent text-muted-foreground hover:text-foreground hover:border-muted-foreground/20'
-            }"}
-            onClick={onClick}
-        >
-            {icon}
-            {label}
-            {count != None and count >= 0 and <span className={f"ml-1 text-xs px-1.5 py-0.5 rounded-full font-medium {
-                'bg-primary/15 text-primary' if active else 'bg-muted text-muted-foreground'
-            }"}>{count}</span>}
-        </button>;
-    }
-
-    # ── Capability Item Components ──────────────────────────────────────────
-
-    def ToolItem(props: Any) -> JsxElement {
-        tool = props.tool;
-        navigate = useNavigate();
-        setSelectedTool = useMcpStore(lambda(s: Any) -> Any { return s.setSelectedTool; });
-
-        paramCount = 0;
-        if tool.inputSchema and tool.inputSchema.properties {
-            paramCount = Object.keys(tool.inputSchema.properties).length;
-        }
-
-        return <button
-            className="w-full flex items-center gap-3 p-4 bg-card/40 border border-border rounded-xl hover:border-primary/30 hover:bg-card/80 hover:shadow-sm hover:shadow-primary/5 transition-all text-left cursor-pointer group"
-            onClick={lambda -> None {
-                setSelectedTool(tool);
-                navigate(f"/playground/tool/{encodeURIComponent(tool.name)}");
-            }}
-        >
-            <div className="flex-shrink-0 w-9 h-9 rounded-lg bg-primary/10 border border-primary/20 flex items-center justify-center group-hover:bg-primary/15 transition-colors">
-                <Wrench size={15} className="text-primary"/>
-            </div>
-            <div className="flex-1 min-w-0">
-                <p className="text-sm font-semibold text-foreground font-mono">{tool.name}</p>
-                {tool.description and <p className="text-xs text-muted-foreground mt-1 line-clamp-2 leading-relaxed">{tool.description}</p>}
-            </div>
-            <div className="flex items-center gap-2 flex-shrink-0">
-                {paramCount > 0 and <span className="text-xs text-muted-foreground bg-muted px-2 py-0.5 rounded-full">{paramCount} params</span>}
-                <ChevronRight size={14} className="text-muted-foreground/30 group-hover:text-primary transition-colors"/>
-            </div>
-        </button>;
-    }
-
-    def PromptItem(props: Any) -> JsxElement {
-        prompt = props.prompt;
-        navigate = useNavigate();
-        setSelectedPrompt = useMcpStore(lambda(s: Any) -> Any { return s.setSelectedPrompt; });
-        args = prompt.arguments or [];
-
-        return <button
-            className="w-full flex items-center gap-3 p-4 bg-card/40 border border-border rounded-xl hover:border-info/30 hover:bg-card/80 hover:shadow-sm hover:shadow-info/5 transition-all text-left cursor-pointer group"
-            onClick={lambda -> None {
-                setSelectedPrompt(prompt);
-                navigate(f"/playground/prompt/{encodeURIComponent(prompt.name)}");
-            }}
-        >
-            <div className="flex-shrink-0 w-9 h-9 rounded-lg bg-info/10 border border-info/20 flex items-center justify-center group-hover:bg-info/15 transition-colors">
-                <MessageSquare size={15} className="text-info"/>
-            </div>
-            <div className="flex-1 min-w-0">
-                <p className="text-sm font-semibold text-foreground font-mono">{prompt.name}</p>
-                {prompt.description and <p className="text-xs text-muted-foreground mt-1 line-clamp-2 leading-relaxed">{prompt.description}</p>}
-            </div>
-            <div className="flex items-center gap-2 flex-shrink-0">
-                {len(args) > 0 and <span className="text-xs text-muted-foreground bg-muted px-2 py-0.5 rounded-full">{len(args)} args</span>}
-                <ChevronRight size={14} className="text-muted-foreground/30 group-hover:text-info transition-colors"/>
-            </div>
-        </button>;
-    }
-
-    def ResourceItem(props: Any) -> JsxElement {
-        resource = props.resource;
-        navigate = useNavigate();
-        setSelectedResource = useMcpStore(lambda(s: Any) -> Any { return s.setSelectedResource; });
-
-        return <button
-            className="w-full flex items-center gap-3 p-4 bg-card/40 border border-border rounded-xl hover:border-warning/30 hover:bg-card/80 hover:shadow-sm hover:shadow-warning/5 transition-all text-left cursor-pointer group"
-            onClick={lambda -> None {
-                setSelectedResource(resource);
-                navigate(f"/playground/resource/{encodeURIComponent(resource.uri)}");
-            }}
-        >
-            <div className="flex-shrink-0 w-9 h-9 rounded-lg bg-warning/10 border border-warning/20 flex items-center justify-center group-hover:bg-warning/15 transition-colors">
-                <FolderOpen size={15} className="text-warning"/>
-            </div>
-            <div className="flex-1 min-w-0">
-                <p className="text-sm font-semibold text-foreground">{resource.name or resource.uri}</p>
-                <p className="text-xs text-muted-foreground font-mono mt-0.5 truncate">{resource.uri}</p>
-            </div>
-            <div className="flex items-center gap-2 flex-shrink-0">
-                {resource.mimeType and <span className="text-xs text-muted-foreground bg-muted px-2 py-0.5 rounded-full">{resource.mimeType}</span>}
-                <ChevronRight size={14} className="text-muted-foreground/30 group-hover:text-warning transition-colors"/>
-            </div>
-        </button>;
-    }
-
-    # ── Empty State ─────────────────────────────────────────────────────────
-
-    def EmptyState(props: Any) -> JsxElement {
-        icon = props.icon;
-        title = props.title;
-        sub = props.sub;
-
-        return <div className="flex flex-col items-center justify-center py-16 gap-3 text-muted-foreground">
-            <div className="w-12 h-12 rounded-xl bg-muted/50 flex items-center justify-center">{icon}</div>
-            <p className="text-sm font-medium">{title}</p>
-            {sub and <p className="text-xs text-muted-foreground/70">{sub}</p>}
-        </div>;
-    }
-
-    # ── Main Page ───────────────────────────────────────────────────────────
-
     def:pub page -> JsxElement {
         params = useParams();
         navigate = useNavigate();
@@ -202,10 +35,8 @@ cl {
         has searchQuery: str = "";
         has refreshing: bool = False;
 
-        # Set active connection from URL param
         setActiveConnection(connId);
 
-        # Find the connection for this page
         connection = None;
         for conn in connections {
             if conn.id == connId {
@@ -213,7 +44,6 @@ cl {
             }
         }
 
-        # Connection not found
         if not connection {
             return <div className="flex flex-col items-center justify-center h-[calc(100vh-3.5rem)] gap-6 text-muted-foreground">
                 <div className="w-16 h-16 rounded-2xl bg-destructive/5 border border-destructive/10 flex items-center justify-center">
@@ -246,7 +76,6 @@ cl {
 
         sidebarIcon = <PanelLeftClose size={16}/> if sidebarOpen else <PanelLeftOpen size={16}/>;
 
-        # ── Capability data ──
         caps = connection.capabilities or {};
         tools = caps.tools or [];
         prompts = caps.prompts or [];
@@ -267,7 +96,6 @@ cl {
             });
         }
 
-        # ── Connecting state ──
         if connection.status == "connecting" {
             return <div className="flex flex-col items-center justify-center h-[calc(100vh-3.5rem)] gap-6">
                 <div className="w-16 h-16 rounded-full border-2 border-primary/20 flex items-center justify-center">
@@ -280,7 +108,6 @@ cl {
             </div>;
         }
 
-        # ── Error state ──
         if connection.status == "error" {
             return <div className="flex flex-col items-center justify-center h-[calc(100vh-3.5rem)] gap-6 text-muted-foreground">
                 <div className="w-16 h-16 rounded-2xl bg-destructive/5 border border-destructive/10 flex items-center justify-center">
@@ -307,7 +134,6 @@ cl {
             </div>;
         }
 
-        # ── 3-Panel Layout ──
         return <div className="flex flex-col h-[calc(100vh-3.5rem)] overflow-hidden bg-background">
             <div className="flex items-center justify-between px-3 py-1.5 border-b border-border bg-card/60 backdrop-blur-sm flex-shrink-0">
                 <div className="flex items-center gap-2">

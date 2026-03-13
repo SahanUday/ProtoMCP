@@ -1,15 +1,6 @@
-"""Launches the jac-mcp server in a background thread on import.
+"""MCP Server Launcher – implementation."""
 
-Uses direct Python import instead of subprocess to avoid venv PATH issues
-in Kubernetes deployments (jac install puts jac-mcp in .jac/venv/ which
-the system jac binary can't access as a CLI plugin).
-"""
-
-import threading;
-import time;
-import urllib.request;
-
-def _start_mcp_server() -> Any {
+impl _start_mcp_server() -> Any {
     try {
         import from jac_mcp.server { JacMcpServer }
     } except ImportError as e {
@@ -57,5 +48,3 @@ def _start_mcp_server() -> Any {
     }
     return None;
 }
-
-glob _mcp_process: Any = _start_mcp_server();
