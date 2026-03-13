@@ -68,7 +68,7 @@ def:pub useMcpClient -> Any {
             addHistoryEntry(histEntry);
 
             try {
-                fetchResp = await fetch("/function/mcp_proxy", {
+                fetchResp = await fetch("/mcp-proxy", {
                     "method": "POST",
                     "headers": {"Content-Type": "application/json"},
                     "body": JSON.stringify({
