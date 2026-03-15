@@ -159,12 +159,3 @@
 }
 .animate-float { animation: float 4s ease-in-out infinite; }
 
-@keyframes shimmer {
-    0% { background-position: -200% 0; }
-    100% { background-position: 200% 0; }
-}
-.animate-shimmer {
-    background: linear-gradient(90deg, transparent, color-mix(in oklch, var(--primary) 10%, transparent), transparent);
-    background-size: 200% 100%;
-    animation: shimmer 3s infinite;
-}

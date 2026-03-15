@@ -23,25 +23,15 @@ cl {
         has error: Any = None;
         has copied: bool = False;
 
-        # Find active connection
-        activeConnection = None;
-        for conn in connections {
-            if conn.id == activeConnectionId {
-                activeConnection = conn;
-            }
-        }
+        activeConnection = connections.find(lambda(c: Any) -> Any { return c.id == activeConnectionId; }) or None;
 
         backPath = f"/playground/{activeConnectionId}" if activeConnectionId else "/playground";
 
-        # Find resource
         resource = selectedResource;
         if activeConnection and activeConnection.status == "connected" and activeConnection.capabilities {
             resources = activeConnection.capabilities.resources or [];
-            for r in resources {
-                if r.uri == resourceUri {
-                    resource = r;
-                }
-            }
+            found = resources.find(lambda(r: Any) -> Any { return r.uri == resourceUri; });
+            if found { resource = found; }
         }
 
         if not resource {

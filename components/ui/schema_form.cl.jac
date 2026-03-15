@@ -50,7 +50,8 @@ def RenderFieldForSchema(schema: Any, path: Any, value: Any, onChange: Any) -> A
         return <div className="pl-3 border-l border-border flex flex-col gap-3">
             {Object.keys(subProps).map(lambda(key: Any) -> Any {
                 subSchema = subProps[key] or {};
-                subValue = (value or {})[key];                    return <div key={key}>
+                subValue = (value or {})[key];
+                    return <div key={key}>
                     <label className="block text-xs font-medium text-muted-foreground mb-1">{key}</label>
                     <RenderFieldForSchema schema={subSchema} path={f"{path}.{key}"} value={subValue} onChange={onChange}/>
                 </div>;
@@ -168,9 +169,9 @@ def RenderFieldForSchema(schema: Any, path: Any, value: Any, onChange: Any) -> A
     />;
 }
 
-def setNestedValue(`obj: Any, path: Any, value: Any) -> Any {
+def setNestedValue(source: Any, path: Any, value: Any) -> Any {
     parts = path.split(".");
-    result = {**`obj};
+    result = {**source};
     current = result;
     i = 0;
     while i < len(parts) - 1 {

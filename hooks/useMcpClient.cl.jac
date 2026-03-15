@@ -6,8 +6,9 @@ Routes all calls through the backend /api/mcp-proxy endpoint which handles CORS.
 cl import from ..store.mcp_store { useMcpStore }
 
 # Module-level session cache — updated synchronously, bypasses React state timing.
-# Keyed by connection ID, stores the mcp-session-id value.
-glob _sessions: Any = {};
+glob sessions: Any = {};
+
+glob MCP_PROXY_ENDPOINT: str = "/function/mcp_proxy";
 
 def buildRpcRequest(method: Any, params: Any = None) -> Any {
     req = {
@@ -48,7 +49,7 @@ def:pub useMcpClient -> Any {
             authHeaders = buildAuthHeaders(connection.auth);
 
             # Attach session ID from synchronous cache (not React state)
-            sid = _sessions[connection.id];
+            sid = sessions[connection.id];
             if sid {
                 authHeaders["mcp-session-id"] = sid;
             }
@@ -68,7 +69,7 @@ def:pub useMcpClient -> Any {
             addHistoryEntry(histEntry);
 
             try {
-                fetchResp = await fetch("/function/mcp_proxy", {
+                fetchResp = await fetch(MCP_PROXY_ENDPOINT, {
                     "method": "POST",
                     "headers": {"Content-Type": "application/json"},
                     "body": JSON.stringify({
@@ -102,7 +103,7 @@ def:pub useMcpClient -> Any {
 
                 # Save session ID synchronously in module-level cache
                 if resp.sessionId {
-                    _sessions[connection.id] = resp.sessionId;
+                    sessions[connection.id] = resp.sessionId;
                     updateConnection(connection.id, {"sessionId": resp.sessionId});
                 }
 
@@ -128,7 +129,7 @@ def:pub useMcpClient -> Any {
 
     async def initialize(connection: Any) -> Any {
         # Clear stale session synchronously before connecting
-        _sessions[connection.id] = None;
+        sessions[connection.id] = None;
         updateConnection(connection.id, {"status": "connecting", "sessionId": None});
 
         resp = await sendRpc(connection, "initialize", {
