@@ -23,25 +23,15 @@ cl {
         has resultError: Any = None;
         has copied: bool = False;
 
-        # Find active connection
-        activeConnection = None;
-        for conn in connections {
-            if conn.id == activeConnectionId {
-                activeConnection = conn;
-            }
-        }
+        activeConnection = connections.find(lambda(c: Any) -> Any { return c.id == activeConnectionId; }) or None;
 
         backPath = f"/playground/{activeConnectionId}" if activeConnectionId else "/playground";
 
-        # Find tool from capabilities or store
         tool = selectedTool;
         if activeConnection and activeConnection.status == "connected" and activeConnection.capabilities {
             tools = activeConnection.capabilities.tools or [];
-            for t in tools {
-                if t.name == toolName {
-                    tool = t;
-                }
-            }
+            found = tools.find(lambda(t: Any) -> Any { return t.name == toolName; });
+            if found { tool = found; }
         }
 
         if not tool {

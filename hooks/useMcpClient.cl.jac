@@ -6,8 +6,10 @@ Routes all calls through the backend /api/mcp-proxy endpoint which handles CORS.
 cl import from ..store.mcp_store { useMcpStore }
 
 # Module-level session cache — updated synchronously, bypasses React state timing.
-# Keyed by connection ID, stores the mcp-session-id value.
-glob _sessions: Any = {};
+glob __sessions: Any = {};
+
+glob MCP_PROXY_ENDPOINT: str = "/function/mcp_proxy";
+glob MAX_HISTORY_ITEMS: int = 200;
 
 def buildRpcRequest(method: Any, params: Any = None) -> Any {
     req = {
@@ -68,7 +70,7 @@ def:pub useMcpClient -> Any {
             addHistoryEntry(histEntry);
 
             try {
-                fetchResp = await fetch("/function/mcp_proxy", {
+                fetchResp = await fetch(MCP_PROXY_ENDPOINT, {
                     "method": "POST",
                     "headers": {"Content-Type": "application/json"},
                     "body": JSON.stringify({

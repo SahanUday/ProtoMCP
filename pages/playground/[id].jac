@@ -37,12 +37,7 @@ cl {
 
         setActiveConnection(connId);
 
-        connection = None;
-        for conn in connections {
-            if conn.id == connId {
-                connection = conn;
-            }
-        }
+        connection = connections.find(lambda(c: Any) -> Any { return c.id == connId; }) or None;
 
         if not connection {
             return <div className="flex flex-col items-center justify-center h-[calc(100vh-3.5rem)] gap-6 text-muted-foreground">

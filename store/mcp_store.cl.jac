@@ -3,6 +3,7 @@
 cl import from "react" { createContext, useContext }
 
 glob McpCtx: Any = createContext(None);
+glob MAX_HISTORY: int = 200;
 
 def:pub McpProvider(props: Any) -> JsxElement {
     has connections: Any = [];
@@ -34,8 +35,8 @@ def:pub McpProvider(props: Any) -> JsxElement {
             });
         };
     }
-    def addHistoryEntry(`entry: Any) -> None {
-        history = lambda(prev: Any) -> Any { return [`entry].concat(prev).slice(0, 200); };
+    def addHistoryEntry(hist_entry: Any) -> None {
+        history = lambda(prev: Any) -> Any { return [hist_entry].concat(prev).slice(0, MAX_HISTORY); };
     }
     def updateHistoryEntry(id: Any, patch: Any) -> None {
         history = lambda(prev: Any) -> Any {

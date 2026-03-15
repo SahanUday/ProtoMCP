@@ -5,7 +5,7 @@ cl import from ..ui.json_viewer { JsonViewer }
 cl import from ...store.mcp_store { useMcpStore }
 
 def HistoryEntry(props: Any) -> JsxElement {
-    `entry = props.entry;
+    hist_entry = props.entry;
 
     has expanded: bool = False;
 
@@ -21,13 +21,13 @@ def HistoryEntry(props: Any) -> JsxElement {
         "pending": "border-warning/10 hover:border-warning/20"
     };
 
-    entryStatus = `entry.status if `entry else "pending";
+    entryStatus = hist_entry.status if hist_entry else "pending";
     entryIcon = statusIcon.success if entryStatus == "success" else (statusIcon.error if entryStatus == "error" else statusIcon.pending);
     entryBgCls = statusBg.success if entryStatus == "success" else (statusBg.error if entryStatus == "error" else statusBg.pending);
     entryStatusCls = "text-success" if entryStatus == "success" else ("text-destructive" if entryStatus == "error" else "text-warning");
-    entryTimestamp = `entry.timestamp or "";
-    entryServerName = `entry.serverName or "";
-    entryDuration = `entry.durationMs;
+    entryTimestamp = hist_entry.timestamp or "";
+    entryServerName = hist_entry.serverName or "";
+    entryDuration = hist_entry.durationMs;
 
     return <div className={f"border rounded-lg overflow-hidden text-xs transition-colors {entryBgCls}"}>
         <button
@@ -35,7 +35,7 @@ def HistoryEntry(props: Any) -> JsxElement {
             onClick={lambda -> None { expanded = not expanded; }}
         >
             {entryIcon}
-            <span className="flex-1 font-mono text-foreground/80 truncate">{`entry.method}</span>
+            <span className="flex-1 font-mono text-foreground/80 truncate">{hist_entry.method}</span>
             {entryDuration and <span className="flex items-center gap-0.5 text-muted-foreground/60"><Clock size={9}/>{entryDuration}ms</span>}
             {<ChevronDown size={11} className="text-muted-foreground/40 flex-shrink-0"/> if expanded else <ChevronRight size={11} className="text-muted-foreground/40 flex-shrink-0"/>}
         </button>
@@ -48,15 +48,15 @@ def HistoryEntry(props: Any) -> JsxElement {
 
             <div>
                 <p className="text-muted-foreground mb-1 font-medium text-xs">Request</p>
-                <JsonViewer data={`entry.request} maxHeight="150px"/>
+                <JsonViewer data={hist_entry.request} maxHeight="150px"/>
             </div>
 
-            {`entry.response and <div>
+            {hist_entry.response and <div>
                 <p className={f"mb-1 font-medium text-xs {entryStatusCls}"}>Response</p>
-                <JsonViewer data={`entry.response} maxHeight="200px"/>
+                <JsonViewer data={hist_entry.response} maxHeight="200px"/>
             </div>}
 
-            {`entry.status == "pending" and <p className="text-warning text-xs italic">Waiting for response...</p>}
+            {hist_entry.status == "pending" and <p className="text-warning text-xs italic">Waiting for response...</p>}
         </div>}
     </div>;
 }
@@ -107,8 +107,8 @@ def:pub HistoryPanel(props: Any) -> JsxElement {
                 <p className="text-xs font-medium text-muted-foreground/60">No logs yet</p>
                 <p className="text-xs text-muted-foreground/40">Requests will appear here</p>
             </div>}
-            {len(filtered) > 0 and filtered.map(lambda(`entry: Any) -> Any {
-                return <HistoryEntry key={`entry.id} entry={`entry}/>;
+            {len(filtered) > 0 and filtered.map(lambda(hist_entry: Any) -> Any {
+                return <HistoryEntry key={hist_entry.id} entry={hist_entry}/>;
             })}
         </div>
     </div>;

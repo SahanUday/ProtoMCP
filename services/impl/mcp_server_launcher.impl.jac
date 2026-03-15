@@ -34,7 +34,7 @@ impl _start_mcp_server() -> Any {
                     break;
                 }
             } except Exception {
-                0;
+                None;
             }
         }
 

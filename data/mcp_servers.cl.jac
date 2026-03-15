@@ -1,6 +1,6 @@
 """Central MCP server registry – add new servers here."""
 
-def:pub getMcpServers -> Any {
+def:pub getMcpServers -> list {
     return [
         {
             "id": "jac-mcp",

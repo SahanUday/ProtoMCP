@@ -23,25 +23,15 @@ cl {
         has argValues: Any = {};
         has copied: bool = False;
 
-        # Find active connection
-        activeConnection = None;
-        for conn in connections {
-            if conn.id == activeConnectionId {
-                activeConnection = conn;
-            }
-        }
+        activeConnection = connections.find(lambda(c: Any) -> Any { return c.id == activeConnectionId; }) or None;
 
         backPath = f"/playground/{activeConnectionId}" if activeConnectionId else "/playground";
 
-        # Find prompt
         prompt = selectedPrompt;
         if activeConnection and activeConnection.status == "connected" and activeConnection.capabilities {
             prompts = activeConnection.capabilities.prompts or [];
-            for p in prompts {
-                if p.name == promptName {
-                    prompt = p;
-                }
-            }
+            found = prompts.find(lambda(p: Any) -> Any { return p.name == promptName; });
+            if found { prompt = found; }
         }
 
         if not prompt {
