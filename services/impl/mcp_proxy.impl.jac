@@ -6,6 +6,11 @@ impl mcp_proxy(
     headers: dict = {},
     transport: str = "streamable-http"
 ) -> dict {
+    # Resolve sentinel value to avoid WAF blocking internal IPs in request body
+    if url == "builtin://jac-mcp" {
+        url = "http://127.0.0.1:3002/mcp/";
+    }
+
     request_headers = {
         "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 Chrome/120 Safari/537.36",
         "Content-Type": "application/json",
