@@ -3,8 +3,9 @@
 Handles: string, number, integer, boolean, array (simple), object (nested keys).
 """
 
-cl import from "react" { useState }
+cl import from "react" { useState, useEffect }
 cl import from .primitives { Input, Btn, Textarea, Select }
+cl import from "@monaco-editor/react" { default as MonacoEditor }
 
 def RenderFieldForSchema(schema: Any, path: Any, value: Any, onChange: Any) -> Any {
     safeSchema = schema or {};
@@ -95,6 +96,57 @@ def RenderFieldForSchema(schema: Any, path: Any, value: Any, onChange: Any) -> A
                 onClick={addItem}
                 className="text-xs text-primary hover:text-primary/80 text-left cursor-pointer"
             >+ Add item</button>
+        </div>;
+    }
+
+    # Code editor: detect by field name or schema format
+    codeFieldNames = ["code", "source", "source_code", "jac_code", "python_code", "script", "snippet"];
+    lowerPath = path.toLowerCase();
+    isCodeField = codeFieldNames.includes(lowerPath) or safeSchema.format == "code";
+
+    if isCodeField {
+        has editorTheme: Any = "vs-dark";
+
+        useEffect(lambda -> Any {
+            `root = document.documentElement;
+            isDark = `root.classList.contains("dark");
+            editorTheme = "vs-dark" if isDark else "vs";
+
+            observer = Reflect.construct(MutationObserver, [lambda(mutations: Any) -> None {
+                editorTheme = "vs-dark" if document.documentElement.classList.contains("dark") else "vs";
+            }]);
+            observer.observe(`root, {"attributes": True, "attributeFilter": ["class"]});
+
+            return lambda -> None { observer.disconnect(); };
+        }, []);
+
+        def handleEditorChange(val: Any) -> None {
+            onChange(path, val or "");
+        }
+
+        return <div className="monaco-container">
+            <MonacoEditor
+                height="300px"
+                defaultLanguage="python"
+                theme={editorTheme}
+                value={value or ""}
+                onChange={handleEditorChange}
+                options={{
+                    "minimap": {"enabled": False},
+                    "fontSize": 13,
+                    "lineNumbers": "on",
+                    "scrollBeyondLastLine": False,
+                    "wordWrap": "on",
+                    "tabSize": 4,
+                    "insertSpaces": True,
+                    "automaticLayout": True,
+                    "padding": {"top": 12, "bottom": 12},
+                    "renderLineHighlight": "line",
+                    "scrollbar": {"verticalScrollbarSize": 6, "horizontalScrollbarSize": 6},
+                    "overviewRulerBorder": False,
+                    "hideCursorInOverviewRuler": True
+                }}
+            />
         </div>;
     }
 
