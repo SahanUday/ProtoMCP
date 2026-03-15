@@ -155,29 +155,3 @@ def:pub Textarea(props: Any) -> JsxElement {
     </div>;
 }
 
-def:pub Panel(props: Any) -> JsxElement {
-    title = props.title;
-    children = props.children;
-    actions = props.actions;
-    extraClass = props.className or "";
-
-    return <div className={cn(["bg-card border border-border rounded-xl overflow-hidden", extraClass])}>
-        {title and <div className="flex items-center justify-between px-4 py-2.5 border-b border-border bg-muted/30">
-            <span className="text-sm font-semibold text-foreground">{title}</span>
-            {actions and <div className="flex items-center gap-2">{actions}</div>}
-        </div>}
-        <div className="p-4">{children}</div>
-    </div>;
-}
-
-def:pub Empty(props: Any) -> JsxElement {
-    icon = props.icon or "○";
-    message = props.message or "Nothing here";
-    sub = props.sub;
-
-    return <div className="flex flex-col items-center justify-center py-12 gap-2 text-muted-foreground">
-        <span className="text-3xl">{icon}</span>
-        <p className="text-sm font-medium">{message}</p>
-        {sub and <p className="text-xs text-muted-foreground/70">{sub}</p>}
-    </div>;
-}

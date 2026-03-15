@@ -9,7 +9,6 @@ cl import from ..store.mcp_store { useMcpStore }
 glob sessions: Any = {};
 
 glob MCP_PROXY_ENDPOINT: str = "/function/mcp_proxy";
-glob MAX_HISTORY_ITEMS: int = 200;
 
 def buildRpcRequest(method: Any, params: Any = None) -> Any {
     req = {
