@@ -1,9 +1,9 @@
 
 <div align="center">
 
-<img src="assets/mcp.png" alt="JAC MCP Playground" width="120" />
+<img src="assets/mcp.png" alt="MCP ProtoLab" width="120" />
 
-# JAC MCP Playground
+# MCP ProtoLab
 
 **A Postman-like web UI for Model Context Protocol servers**
 
@@ -85,7 +85,7 @@ Connect, explore, and debug any MCP server directly from your browser. No local 
 
 ### Option 1 — Use the Hosted Version
 
-No setup required. Open the playground in your browser:
+No setup required. Open MCP ProtoLab in your browser:
 
 **[https://jac-mcp-playground.jaseci.org/](https://jac-mcp-playground.jaseci.org/)**
 

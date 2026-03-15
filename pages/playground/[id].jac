@@ -1,4 +1,4 @@
-"""MCP Server Playground – 3-panel: server sidebar | explorer | logs."""
+"""MCP Server ProtoLab – 3-panel: server sidebar | explorer | logs."""
 
 cl import from "@jac/runtime" { useParams, useNavigate }
 cl import from "lucide-react" {

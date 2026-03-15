@@ -1,4 +1,4 @@
-"""MCP Playground – Landing Page."""
+"""MCP ProtoLab – Landing Page."""
 
 cl import from "@jac/runtime" { Link }
 cl import from "lucide-react" {
@@ -84,14 +84,14 @@ cl {
                     </h1>
 
                     <p className="text-lg text-muted-foreground max-w-2xl mx-auto mb-10 leading-relaxed">
-                        {"The interactive playground for Model Context Protocol. Connect to any MCP server, "}
+                        {"The interactive lab for Model Context Protocol. Connect to any MCP server, "}
                         {"execute tools, invoke prompts, and browse resources — all from your browser."}
                     </p>
 
                     <div className="flex items-center justify-center gap-4 flex-wrap">
                         <Link to="/testmcp" className="inline-flex items-center gap-2 bg-primary hover:bg-primary/90 text-primary-foreground font-semibold px-7 py-3 rounded-xl transition-all duration-200 shadow-lg shadow-primary/25 hover:shadow-primary/40 hover:scale-[1.02]">
                             <Zap size={16}/>
-                            Launch Playground
+                            Launch ProtoLab
                             <ArrowRight size={16}/>
                         </Link>
                     </div>

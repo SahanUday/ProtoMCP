@@ -128,7 +128,7 @@ cl {
                                 <div className="p-3 bg-warning/10 border border-warning/20 rounded-lg mt-1">
                                     <p className="text-xs text-warning font-medium">⚠ Local server detected</p>
                                     <p className="text-xs text-muted-foreground mt-1">
-                                        {"This playground is remote and can't reach localhost. Run locally: "}
+                                        {"This app is remote and can't reach localhost. Run locally: "}
                                         <code className="font-mono bg-muted px-1.5 py-0.5 rounded text-foreground text-xs">jac serve</code>
                                     </p>
                                 </div>

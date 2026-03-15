@@ -24,14 +24,14 @@ cl {
                 <div className="flex items-center gap-6">
                     <Link to="/" className="flex items-center gap-2.5 hover:opacity-80 transition-opacity">
                         <img src="static/assets/mcp.png" alt="MCP" className="w-7 h-7 rounded-lg object-contain"/>
-                        <span className="font-bold text-foreground tracking-tight">MCP Playground</span>
+                        <span className="font-bold text-foreground tracking-tight">MCP ProtoLab</span>
                     </Link>
                     <nav className="hidden sm:flex items-center gap-1">
                         <Link to="/" className="px-3 py-1.5 rounded-lg text-sm font-medium text-muted-foreground hover:text-foreground hover:bg-muted/60 transition-colors">
                             Home
                         </Link>
                         <Link to="/playground" className="px-3 py-1.5 rounded-lg text-sm font-medium text-muted-foreground hover:text-foreground hover:bg-muted/60 transition-colors">
-                            Playground
+                            ProtoLab
                         </Link>
                         <Link to="/mcpregistry" className="px-3 py-1.5 rounded-lg text-sm font-medium text-muted-foreground hover:text-foreground hover:bg-muted/60 transition-colors">
                             MCP Servers List

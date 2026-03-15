@@ -135,7 +135,7 @@ def:pub useMcpClient -> Any {
         resp = await sendRpc(connection, "initialize", {
             "protocolVersion": "2024-11-05",
             "capabilities": {},
-            "clientInfo": {"name": "mcp-playground", "version": "1.0.0"}
+            "clientInfo": {"name": "mcp-protolab", "version": "1.0.0"}
         });
         if resp and not resp.error and resp.result {
             serverInfo = resp.result.serverInfo or {};
