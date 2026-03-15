@@ -8,7 +8,7 @@ def:pub getMcpServers -> list {
             "namespace": "jaseci.org",
             "transport": "http",
             "description": "Official Jac programming language MCP server. Validate, format, and convert Jac code with access to full language docs, grammar, and examples.",
-            "url": "http://127.0.0.1:3002/mcp/",
+            "url": "builtin://jac-mcp",
             "auth": "none",
             "authRequired": False
         },
