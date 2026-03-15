@@ -1,21 +1,13 @@
 [project]
 name = "jac-mcp-playground"
 version = "1.0.0"
-description = "MCP Playground – explore, test and debug MCP servers"
+description = "MCP ProtoLab – explore, test and debug MCP servers"
 entry-point = "main.jac"
 authors = ["Jaseci Labs"]
 license = "MIT"
 
 [serve]
 base_route_app = "app"
-
-[plugins.client.app_meta_data]
-title = "MCP Playground"
-description = "A Postman-style playground for Model Context Protocol (MCP) servers"
-keywords = "mcp, jaseci, jac, llm, tools, playground"
-author = "Jaseci Labs"
-theme_color = "#0f172a"
-icon = "/assets/mcp.png"
 
 [plugins.client.vite]
 plugins = ["tailwindcss()"]
@@ -46,3 +38,36 @@ redis_enabled = false
 
 [dev-dependencies]
 watchdog = ">=3.0.0"
+
+[plugins.client.app_meta_data]
+title = "MCP ProtoLab"
+description = "A Postman-style lab for exploring, testing and debugging Model Context Protocol (MCP) servers"
+keywords = "mcp, jaseci, jac, llm, tools, protolab, playground, model context protocol, mcp client, mcp testing"
+author = "Jaseci Labs"
+robots = "index, follow"
+theme_color = "#0f172a"
+icon = "/assets/mcp.png"
+canonical = "https://jac-mcp-playground.jaseci.org"
+
+# Open Graph – social media sharing
+og_type = "website"
+og_title = "MCP ProtoLab – Explore, Test & Debug MCP Servers"
+og_description = "Connect to any Model Context Protocol server, execute tools, invoke prompts, and browse resources — all from your browser."
+og_url = "https://jac-mcp-playground.jaseci.org"
+og_image = "https://jac-mcp-playground.jaseci.org/assets/banner-dark.png"
+og_image_width = "1200"
+og_image_height = "630"
+og_site_name = "MCP ProtoLab"
+
+# Custom meta
+meta_application_name = "MCP ProtoLab"
+
+[plugins.client.pwa]
+theme_color = "#000000"
+background_color = "#ffffff"
+cache_name = "mcp-protolab-cache-v1"
+
+[plugins.client.pwa.manifest]
+name = "MCP ProtoLab"
+short_name = "MCP ProtoLab"
+description = "A Postman-style lab for exploring, testing and debugging Model Context Protocol (MCP) servers"
