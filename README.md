@@ -133,13 +133,13 @@ graph TB
     User(["User"])
 
     subgraph Browser["Browser"]
-        Pages["Pages\nLanding · Registry · Connect · Playground"]
-        Store["MCP Store\nconnections · history · selected capability"]
-        Hook["useMcpClient Hook\nbuilds JSON-RPC requests · caches session ID"]
+        Pages["Pages: Landing · Registry · Connect · Playground"]
+        Store["MCP Store: connections · history · selected capability"]
+        Hook["useMcpClient Hook: builds JSON-RPC requests · caches session ID"]
     end
 
     subgraph Backend["Jac Backend"]
-        Proxy["MCP Proxy\nCORS handler · SSE endpoint discovery"]
+        Proxy["MCP Proxy: CORS handler · SSE endpoint discovery"]
     end
 
     subgraph MCP["Remote MCP Servers"]
