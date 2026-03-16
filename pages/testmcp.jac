@@ -1,6 +1,6 @@
 """Connect to MCP Server – transport selection, URL, auth, and connect."""
 
-cl import from "@jac/runtime" { useNavigate }
+cl import from "@jac/runtime" { useNavigate, Link }
 cl import from "lucide-react" {
     Radio, Wifi, Server, Shield, ChevronRight,
     Loader2, AlertCircle
@@ -195,7 +195,7 @@ cl {
                         </div>}
                     </div>
 
-                    <div className="p-6 border-t border-border bg-muted/20">
+                    <div className="p-6 border-t border-border bg-muted/20 flex flex-col items-center gap-3">
                         <button
                             onClick={handleConnect}
                             disabled={Boolean(connecting)}
@@ -206,6 +206,9 @@ cl {
                             {connecting and "Connecting..." or "Connect to Server"}
                             {not connecting and <ChevronRight size={16}/>}
                         </button>
+                        <Link to="/mcpregistry" className="text-sm text-muted-foreground hover:text-primary transition-colors underline underline-offset-4">
+                            Connect to a registered MCP server
+                        </Link>
                     </div>
                 </div>
             </div>

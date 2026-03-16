@@ -6,10 +6,10 @@ glob McpCtx: Any = createContext(None);
 glob MAX_HISTORY: int = 200;
 
 def:pub McpProvider(props: Any) -> JsxElement {
-    has connections: Any = [];
+    has connections: list = [];
     has activeConnectionId: Any = None;
-    has history: Any = [];
-    has activeTab: Any = "tools";
+    has history: list = [];
+    has activeTab: str = "tools";
     has selectedTool: Any = None;
     has selectedPrompt: Any = None;
     has selectedResource: Any = None;

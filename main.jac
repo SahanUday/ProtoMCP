@@ -1,4 +1,4 @@
-"""MCP ProtoLab – entry point."""
+"""ProtoMCP – entry point."""
 
 import from services.mcp_proxy { mcp_proxy }
 import from services.mcp_server_launcher { _mcp_process }
