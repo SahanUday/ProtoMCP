@@ -1,4 +1,4 @@
-"""ProtoLab – connected MCP servers overview with cards."""
+"""Playground – connected MCP servers overview with cards."""
 
 cl import from "@jac/runtime" { Link, useNavigate }
 cl import from "lucide-react" { Plus }

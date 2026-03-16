@@ -1,15 +1,15 @@
 
 <div align="center">
 
-<img src="assets/mcp.png" alt="MCP ProtoLab" width="120" />
+<img src="assets/mcp.png" alt="ProtoMCP" width="120" />
 
-# MCP ProtoLab
+# ProtoMCP
 
 **A Postman-like web UI for Model Context Protocol servers**
 
 Connect, explore, and debug any MCP server directly from your browser. No local setup required.
 
-[![MCP](https://img.shields.io/badge/MCP-v2024--11--05-blue?style=flat-square)](https://modelcontextprotocol.io)
+[![MCP](https://img.shields.io/badge/MCP-v2024--11--16-blue?style=flat-square)](https://modelcontextprotocol.io)
 [![Built with Jac](https://img.shields.io/badge/Built%20with-Jac-orange?style=flat-square)](https://jaseci.org)
 [![License: MIT](https://img.shields.io/badge/License-MIT-green?style=flat-square)](LICENSE)
 [![GitHub Stars](https://img.shields.io/github/stars/jaseci-labs/jac-mcp-playground?style=flat-square)](https://github.com/jaseci-labs/jac-mcp-playground/stargazers)
@@ -21,7 +21,7 @@ Connect, explore, and debug any MCP server directly from your browser. No local 
 ---
 
   <p>
-    <a href="https://jac-mcp-playground.jaseci.org/">
+    <a href="https://protomcp.io/">
       <picture>
         <source media="(prefers-color-scheme: dark)" srcset="./assets/banner-dark.png">
         <source media="(prefers-color-scheme: light)" srcset="./assets/banner-dark.png">
@@ -85,9 +85,9 @@ Connect, explore, and debug any MCP server directly from your browser. No local 
 
 ### Option 1 — Use the Hosted Version
 
-No setup required. Open MCP ProtoLab in your browser:
+No setup required. Open ProtoMCP in your browser:
 
-**[https://jac-mcp-playground.jaseci.org/](https://jac-mcp-playground.jaseci.org/)**
+**[https://protomcp.io/](https://protomcp.io/)**
 
 ### Option 2 — Run Locally
 
@@ -128,35 +128,35 @@ Open [http://localhost:8000](http://localhost:8000) in your browser.
 3. Click **Test Server** — the connection form opens pre-filled
 
 ## Architecture
+```mermaid
+graph TB
+    User(["User"])
 
-```
-┌─────────────────────────────────────────────────────────────┐
-│                         Browser                             │
-│  ┌───────────┐  ┌──────────────┐  ┌─────────────────────┐   │
-│  │ jac-client│  │   MCP Store  │  │  MCP Client Hook    │   │
-│  │           |  │ (Context)    │  │  (JSON-RPC)         │   │
-│  └─────┬─────┘  └──────┬───────┘  └──────────┬──────────┘   │
-│        └───────────────┴─────────────────────┘              │
-│                           │                                 │
-│                       HTTP POST                             │
-└───────────────────────────┼─────────────────────────────────┘
-                            │
-┌───────────────────────────▼─────────────────────────────────┐
-│                    Jac Runtime                              │
-│  ┌─────────────────────────────────────────────────────┐    │
-│  │         mcp_proxy Walker (CORS Handler)             │    │
-│  │  • Forward requests to MCP server                   │    │
-│  │  • Handle SSE endpoint discovery                    │    │
-│  │  • Stream responses line-by-line                    │    │
-│  └──────────────────┬──────────────────────────────────┘    │
-└─────────────────────┼───────────────────────────────────────┘
-                      │
-              ┌───────▼────────┐
-              │  MCP Server    │
-              │  (Remote)      │
-              └────────────────┘
-```
+    subgraph Browser["Browser"]
+        Pages["Pages: Landing · Registry · Connect · Playground"]
+        Store["MCP Store: connections · history · selected capability"]
+        Hook["useMcpClient Hook: builds JSON-RPC requests · caches session ID"]
+    end
 
+    subgraph Backend["Jac Backend"]
+        Proxy["MCP Proxy: CORS handler · SSE endpoint discovery"]
+    end
+
+    subgraph MCP["Remote MCP Servers"]
+        HTTP["Streamable HTTP"]
+        SSE["SSE (legacy)"]
+    end
+
+    User --> Pages
+    Pages -->|"connect / navigate"| Store
+    Store -->|"state"| Pages
+    Pages --> Hook
+    Hook -->|"read & update"| Store
+    Hook -->|"HTTP POST"| Proxy
+    Proxy --> HTTP
+    Proxy --> SSE
+    Proxy -->|"response + session ID"| Hook
+```
 ## Tech Stack
 
 - **Framework**: [Jac (Jaseci)](https://jaseci.org) — Full-stack language
@@ -224,7 +224,7 @@ MIT — see [LICENSE](LICENSE) for details.
 
 <div align="center">
 
-**[Live Demo](https://jac-mcp-playground.jaseci.org/)** &nbsp;·&nbsp; [MCP Specification](https://modelcontextprotocol.io) &nbsp;·&nbsp; [Jac Docs](https://jaseci.org) &nbsp;·&nbsp; [Jaseci Labs](https://github.com/jaseci-labs)
+**[Live Demo](https://protomcp.io/)** &nbsp;·&nbsp; [MCP Specification](https://modelcontextprotocol.io) &nbsp;·&nbsp; [Jac Docs](https://jaseci.org) &nbsp;·&nbsp; [Jaseci Labs](https://github.com/jaseci-labs)
 
 <sub>Built with ❤️ by <a href="https://github.com/jaseci-labs">Jaseci Labs</a></sub>
 

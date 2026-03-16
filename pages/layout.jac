@@ -1,12 +1,13 @@
 """Root layout – shared header across all pages."""
 
 cl import from "@jac/runtime" { Outlet, Link }
-cl import from "lucide-react" { Sun, Moon, ExternalLink }
+cl import from "lucide-react" { Sun, Moon, ExternalLink, Github, ChevronDown, BookOpen }
 cl import from ..store.mcp_store { McpProvider }
 
 cl {
     def AppHeader() -> JsxElement {
-        has isDark: bool = True;
+        has isDark: bool = False;
+        has docsOpen: bool = False;
 
         def toggleTheme -> None {
             isDark = not isDark;
@@ -24,27 +25,62 @@ cl {
                 <div className="flex items-center gap-6">
                     <Link to="/" className="flex items-center gap-2.5 hover:opacity-80 transition-opacity">
                         <img src="static/assets/mcp.png" alt="MCP" className="w-7 h-7 rounded-lg object-contain"/>
-                        <span className="font-bold text-foreground tracking-tight">MCP ProtoLab</span>
+                        <span className="font-bold text-foreground tracking-tight">ProtoMCP</span>
                     </Link>
                     <nav className="hidden sm:flex items-center gap-1">
                         <Link to="/" className="px-3 py-1.5 rounded-lg text-sm font-medium text-muted-foreground hover:text-foreground hover:bg-muted/60 transition-colors">
                             Home
                         </Link>
                         <Link to="/playground" className="px-3 py-1.5 rounded-lg text-sm font-medium text-muted-foreground hover:text-foreground hover:bg-muted/60 transition-colors">
-                            ProtoLab
+                            Playground
                         </Link>
                         <Link to="/mcpregistry" className="px-3 py-1.5 rounded-lg text-sm font-medium text-muted-foreground hover:text-foreground hover:bg-muted/60 transition-colors">
                             MCP Servers List
                         </Link>
-                        <a href="https://modelcontextprotocol.io" target="_blank" rel="noopener noreferrer" className="flex items-center gap-1 px-3 py-1.5 rounded-lg text-sm font-medium text-muted-foreground hover:text-foreground hover:bg-muted/60 transition-colors">
-                            Docs
-                            <ExternalLink size={11} className="opacity-50"/>
-                        </a>
+                        <div className="relative">
+                            <button
+                                onClick={lambda -> None { docsOpen = not docsOpen; }}
+                                className="flex items-center gap-1 px-3 py-1.5 rounded-lg text-sm font-medium text-muted-foreground hover:text-foreground hover:bg-muted/60 transition-colors cursor-pointer"
+                            >
+                                Docs
+                                <ChevronDown size={12} className="opacity-50"/>
+                            </button>
+                            {docsOpen and <div className="fixed inset-0 z-40" onClick={lambda -> None { docsOpen = False; }}/>}
+                            {docsOpen and <div className="absolute top-full left-0 mt-1 w-72 bg-card border border-border rounded-xl shadow-xl p-2 z-50">
+                                <a
+                                    href="https://blogs.jaseci.org/blog/2026/03/13/browser-automation-walkers-fix-it/"
+                                    target="_blank"
+                                    rel="noopener noreferrer"
+                                    onClick={lambda -> None { docsOpen = False; }}
+                                    className="flex items-start gap-3 p-3 rounded-lg hover:bg-muted/60 transition-colors group"
+                                >
+                                    <div className="w-8 h-8 rounded-lg bg-primary/10 border border-primary/20 flex items-center justify-center text-primary flex-shrink-0">
+                                        <BookOpen size={14}/>
+                                    </div>
+                                    <div className="flex-1 min-w-0">
+                                        <p className="text-sm font-medium text-foreground group-hover:text-primary transition-colors leading-snug">Browser Automation with Walkers</p>
+                                        <p className="text-xs text-muted-foreground mt-0.5">Fix It guide — Jaseci Blog</p>
+                                    </div>
+                                    <ExternalLink size={11} className="text-muted-foreground mt-0.5 flex-shrink-0 opacity-60"/>
+                                </a>
+                            </div>}
+                        </div>
                     </nav>
                 </div>
-                <button onClick={toggleTheme} className="p-2 rounded-lg text-muted-foreground hover:text-foreground hover:bg-muted transition-colors cursor-pointer" title="Toggle theme">
-                    {isDark and <Sun size={16}/> or <Moon size={16}/>}
-                </button>
+                <div className="flex items-center gap-2">
+                    <a
+                        href="https://github.com/SahanUday/ProtoMCP"
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="p-2 rounded-lg text-muted-foreground hover:text-foreground hover:bg-muted transition-colors"
+                        title="GitHub"
+                    >
+                        <Github size={16}/>
+                    </a>
+                    <button onClick={toggleTheme} className="p-2 rounded-lg text-muted-foreground hover:text-foreground hover:bg-muted transition-colors cursor-pointer" title="Toggle theme">
+                        {isDark and <Sun size={16}/> or <Moon size={16}/>}
+                    </button>
+                </div>
             </div>
         </header>;
     }

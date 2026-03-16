@@ -1,4 +1,4 @@
-"""MCP ProtoLab – Landing Page."""
+"""ProtoMCP – Landing Page."""
 
 cl import from "@jac/runtime" { Link }
 cl import from "lucide-react" {
@@ -91,7 +91,7 @@ cl {
                     <div className="flex items-center justify-center gap-4 flex-wrap">
                         <Link to="/testmcp" className="inline-flex items-center gap-2 bg-primary hover:bg-primary/90 text-primary-foreground font-semibold px-7 py-3 rounded-xl transition-all duration-200 shadow-lg shadow-primary/25 hover:shadow-primary/40 hover:scale-[1.02]">
                             <Zap size={16}/>
-                            Launch ProtoLab
+                            Launch Playground
                             <ArrowRight size={16}/>
                         </Link>
                     </div>
@@ -146,7 +146,7 @@ cl {
                         <img src="static/assets/logo.png" alt="Jaseci" className="h-5 opacity-70"/>
                         <span>{"Built with "}<a href="https://jaseci.org" target="_blank" rel="noopener noreferrer" className="text-foreground hover:text-primary transition-colors font-medium">Jac</a>{" by Jaseci Labs"}</span>
                     </div>
-                    <span className="hidden sm:block">MCP Protocol v2024-11-05</span>
+                    <span className="hidden sm:block">ProtoMCP</span>
                 </div>
             </footer>
         </div>;
