@@ -1,7 +1,7 @@
 """ProtoMCP – entry point."""
 
 import from services.mcp_proxy { mcp_proxy }
-import from services.mcp_server_launcher { _mcp_process }
+import from services.mcp_server_launcher { _builtin_servers }
 
 cl import ".styles/globals.css";
 cl import from "react" { useEffect }

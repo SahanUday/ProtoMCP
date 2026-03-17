@@ -13,6 +13,16 @@ def:pub getMcpServers -> list {
             "authRequired": False
         },
         {
+            "id": "jasketch",
+            "name": "JaSketch",
+            "namespace": "jasketch.jaseci.org",
+            "transport": "http",
+            "description": "JaSketch MCP server. Programmatically create and manipulate diagrams on a live canvas — shapes, arrows, text, and more.",
+            "url": "builtin://jasketch",
+            "auth": "none",
+            "authRequired": False
+        },
+        {
             "id": "github-copilot",
             "name": "GitHub Copilot",
             "namespace": "github.com",

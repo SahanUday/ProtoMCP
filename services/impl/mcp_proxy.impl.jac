@@ -6,9 +6,11 @@ impl mcp_proxy(
     headers: dict = {},
     transport: str = "streamable-http"
 ) -> dict {
-    # Resolve sentinel value to avoid WAF blocking internal IPs in request body
+    # Resolve sentinel values to avoid WAF blocking internal IPs in request body
     if url == "builtin://jac-mcp" {
         url = "http://127.0.0.1:3002/mcp/";
+    } elif url == "builtin://jasketch" {
+        url = "http://127.0.0.1:3003/mcp/";
     }
 
     request_headers = {
