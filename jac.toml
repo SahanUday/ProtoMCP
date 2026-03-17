@@ -65,9 +65,9 @@ meta_application_name = "ProtoMCP"
 [plugins.client.pwa]
 theme_color = "#000000"
 background_color = "#ffffff"
-cache_name = "mcp-protolab-cache-v1"
+# cache_name = "mcp-protolab-cache-v1"
 
-[plugins.client.pwa.manifest]
-name = "ProtoMCP"
-short_name = "ProtoMCP"
-description = "A Postman-style lab for exploring, testing and debugging Model Context Protocol (MCP) servers"
+# [plugins.client.pwa.manifest]
+# name = "ProtoMCP"
+# short_name = "ProtoMCP"
+# description = "A Postman-style lab for exploring, testing and debugging Model Context Protocol (MCP) servers"
