@@ -2,6 +2,7 @@
 
 import from services.mcp_proxy { mcp_proxy }
 import from services.mcp_server_launcher { _builtin_servers }
+import from services.llm_caller { llm_call }
 
 cl import ".styles/globals.css";
 cl import from "react" { useEffect }

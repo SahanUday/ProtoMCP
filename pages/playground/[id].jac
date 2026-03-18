@@ -1,10 +1,10 @@
-"""MCP Server Playground – 3-panel: server sidebar | explorer | logs."""
+"""MCP Server Playground – sidebar | tab-switched main (Explorer / Agent) | logs."""
 
 cl import from "@jac/runtime" { useParams, useNavigate }
 cl import from "lucide-react" {
     PanelLeftClose, PanelLeftOpen, ScrollText, Plus, Server,
     Wrench, MessageSquare, FolderOpen, RefreshCw,
-    Loader2, Search, Wifi, Radio, AlertTriangle
+    Loader2, Search, Wifi, Radio, AlertTriangle, Bot
 }
 cl import from ...store.mcp_store { useMcpStore }
 cl import from ...hooks.useMcpClient { useMcpClient }
@@ -14,6 +14,7 @@ cl import from ...components.playground.sidebar_item { SidebarItem }
 cl import from ...components.playground.tab_btn { TabBtn }
 cl import from ...components.playground.capability_items { ToolItem, PromptItem, ResourceItem }
 cl import from ...components.playground.empty_state { EmptyState }
+cl import from ...components.agent.agent_panel { AgentPanel }
 
 cl {
     def:pub page -> JsxElement {
@@ -30,7 +31,8 @@ cl {
         client = useMcpClient();
 
         has sidebarOpen: bool = True;
-        has logsPanelOpen: bool = False;
+        has logsOpen: bool = False;
+        has mainTab: str = "explorer";
         has showConnectModal: bool = False;
         has searchQuery: str = "";
         has refreshing: bool = False;
@@ -145,15 +147,16 @@ cl {
                     </div>}
                 </div>
                 <button
-                    onClick={lambda -> None { logsPanelOpen = not logsPanelOpen; }}
+                    onClick={lambda -> None { logsOpen = not logsOpen; }}
                     className={f"flex items-center gap-1.5 text-xs font-medium px-3 py-1.5 rounded-lg transition-all cursor-pointer {
-                        'bg-primary/10 text-primary border border-primary/20 shadow-sm shadow-primary/5' if logsPanelOpen else 'text-muted-foreground hover:text-foreground hover:bg-muted border border-transparent'
+                        'bg-primary/10 text-primary border border-primary/20 shadow-sm shadow-primary/5' if logsOpen else 'text-muted-foreground hover:text-foreground hover:bg-muted border border-transparent'
                     }"}
+                    title="Toggle logs panel"
                 >
                     <ScrollText size={14}/>
                     Logs
                     {len(history) > 0 and <span className={f"text-xs px-1.5 py-0.5 rounded-full ml-0.5 {
-                        'bg-primary/20 text-primary' if logsPanelOpen else 'bg-muted text-muted-foreground'
+                        'bg-primary/20 text-primary' if logsOpen else 'bg-muted text-muted-foreground'
                     }"}>{len(history)}</span>}
                 </button>
             </div>
@@ -190,9 +193,32 @@ cl {
                     </div>
                 </aside>}
 
-                <main className="flex-1 overflow-hidden flex flex-col">
+                <main className="flex-1 overflow-hidden flex flex-col min-w-0">
                     {connection.status == "connected" and <>
-                        <div className="flex items-center gap-3 px-5 py-3.5 bg-gradient-to-r from-card via-card to-primary/5 border-b border-border flex-shrink-0">
+                        <div className="flex items-center px-3 py-2 border-b border-border bg-card/20 flex-shrink-0">
+                            <div className="flex items-center gap-0.5 bg-muted/60 rounded-xl p-1 w-full">
+                                <button
+                                    onClick={lambda -> None { mainTab = "explorer"; }}
+                                    className={f"flex-1 flex items-center justify-center gap-1.5 text-sm font-semibold py-2 rounded-lg transition-all cursor-pointer {
+                                        'bg-background text-primary shadow-sm' if mainTab == 'explorer' else 'text-muted-foreground hover:text-foreground'
+                                    }"}
+                                >
+                                    <Wrench size={13}/>
+                                    Explorer Mode
+                                </button>
+                                <button
+                                    onClick={lambda -> None { mainTab = "agent"; }}
+                                    className={f"flex-1 flex items-center justify-center gap-1.5 text-sm font-semibold py-2 rounded-lg transition-all cursor-pointer {
+                                        'bg-background text-primary shadow-sm' if mainTab == 'agent' else 'text-muted-foreground hover:text-foreground'
+                                    }"}
+                                >
+                                    <Bot size={13}/>
+                                    Agent Mode
+                                </button>
+                            </div>
+                        </div>
+
+                        {mainTab == "explorer" and <div className="flex items-center gap-3 px-5 py-3 bg-gradient-to-r from-card via-card to-primary/5 border-b border-border flex-shrink-0">
                             <span className="w-2.5 h-2.5 rounded-full bg-success shadow-sm shadow-success/30 flex-shrink-0"/>
                             <div className="flex-1 min-w-0">
                                 <div className="flex items-center gap-2">
@@ -218,52 +244,56 @@ cl {
                                     {refreshing and <Loader2 size={14} className="animate-spin"/> or <RefreshCw size={14}/>}
                                 </button>
                             </div>
-                        </div>
+                        </div>}
 
-                        <div className="flex items-center border-b border-border bg-card/30 px-2 flex-shrink-0">
-                            <TabBtn label="Tools" icon={<Wrench size={14}/>} count={len(tools)} active={activeTab == "tools"} onClick={lambda -> None { setActiveTab("tools"); searchQuery = ""; }}/>
-                            <TabBtn label="Prompts" icon={<MessageSquare size={14}/>} count={len(prompts)} active={activeTab == "prompts"} onClick={lambda -> None { setActiveTab("prompts"); searchQuery = ""; }}/>
-                            <TabBtn label="Resources" icon={<FolderOpen size={14}/>} count={len(resources)} active={activeTab == "resources"} onClick={lambda -> None { setActiveTab("resources"); searchQuery = ""; }}/>
-                        </div>
+                        {mainTab == "explorer" and <>
+                            <div className="flex items-center border-b border-border bg-card/30 px-2 flex-shrink-0">
+                                <TabBtn label="Tools" icon={<Wrench size={14}/>} count={len(tools)} active={activeTab == "tools"} onClick={lambda -> None { setActiveTab("tools"); searchQuery = ""; }}/>
+                                <TabBtn label="Prompts" icon={<MessageSquare size={14}/>} count={len(prompts)} active={activeTab == "prompts"} onClick={lambda -> None { setActiveTab("prompts"); searchQuery = ""; }}/>
+                                <TabBtn label="Resources" icon={<FolderOpen size={14}/>} count={len(resources)} active={activeTab == "resources"} onClick={lambda -> None { setActiveTab("resources"); searchQuery = ""; }}/>
+                            </div>
 
-                        <div className="flex-1 overflow-y-auto p-4">
-                            {len(currentItems) > 3 and <div className="mb-4">
-                                <div className="relative">
-                                    <Search size={14} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-muted-foreground/50"/>
-                                    <input
-                                        type="text"
-                                        value={searchQuery}
-                                        onChange={lambda(e: Any) -> None { searchQuery = e.target.value; }}
-                                        placeholder={f"Search {activeTab}..."}
-                                        className="w-full bg-card border border-border rounded-xl pl-10 pr-4 py-2.5 text-sm text-foreground placeholder-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring/50 focus:border-ring transition-colors"
-                                    />
-                                </div>
-                            </div>}
+                            <div className="flex-1 overflow-y-auto p-4">
+                                {len(currentItems) > 3 and <div className="mb-4">
+                                    <div className="relative">
+                                        <Search size={14} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-muted-foreground/50"/>
+                                        <input
+                                            type="text"
+                                            value={searchQuery}
+                                            onChange={lambda(e: Any) -> None { searchQuery = e.target.value; }}
+                                            placeholder={f"Search {activeTab}..."}
+                                            className="w-full bg-card border border-border rounded-xl pl-10 pr-4 py-2.5 text-sm text-foreground placeholder-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring/50 focus:border-ring transition-colors"
+                                        />
+                                    </div>
+                                </div>}
 
-                            {len(currentItems) == 0 and <EmptyState
-                                icon={<Wrench size={20} className="text-muted-foreground/40"/> if activeTab == "tools" else (<MessageSquare size={20} className="text-muted-foreground/40"/> if activeTab == "prompts" else <FolderOpen size={20} className="text-muted-foreground/40"/>)}
-                                title={f"No {activeTab} available"}
-                                sub={f"This server doesn't expose any {activeTab}"}
-                            />}
+                                {len(currentItems) == 0 and <EmptyState
+                                    icon={<Wrench size={20} className="text-muted-foreground/40"/> if activeTab == "tools" else (<MessageSquare size={20} className="text-muted-foreground/40"/> if activeTab == "prompts" else <FolderOpen size={20} className="text-muted-foreground/40"/>)}
+                                    title={f"No {activeTab} available"}
+                                    sub={f"This server doesn't expose any {activeTab}"}
+                                />}
 
-                            {len(currentItems) > 0 and len(filtered) == 0 and <EmptyState
-                                icon={<Search size={20} className="text-muted-foreground/40"/>}
-                                title="No results"
-                                sub="Try a different search term"
-                            />}
+                                {len(currentItems) > 0 and len(filtered) == 0 and <EmptyState
+                                    icon={<Search size={20} className="text-muted-foreground/40"/>}
+                                    title="No results"
+                                    sub="Try a different search term"
+                                />}
 
-                            {len(filtered) > 0 and <div className="flex flex-col gap-2">
-                                {activeTab == "tools" and filtered.map(lambda(tool: Any) -> Any {
-                                    return <ToolItem key={tool.name} tool={tool}/>;
-                                })}
-                                {activeTab == "prompts" and filtered.map(lambda(p: Any) -> Any {
-                                    return <PromptItem key={p.name} prompt={p}/>;
-                                })}
-                                {activeTab == "resources" and filtered.map(lambda(r: Any) -> Any {
-                                    return <ResourceItem key={r.uri} resource={r}/>;
-                                })}
-                            </div>}
-                        </div>
+                                {len(filtered) > 0 and <div className="flex flex-col gap-2">
+                                    {activeTab == "tools" and filtered.map(lambda(tool: Any) -> Any {
+                                        return <ToolItem key={tool.name} tool={tool}/>;
+                                    })}
+                                    {activeTab == "prompts" and filtered.map(lambda(p: Any) -> Any {
+                                        return <PromptItem key={p.name} prompt={p}/>;
+                                    })}
+                                    {activeTab == "resources" and filtered.map(lambda(r: Any) -> Any {
+                                        return <ResourceItem key={r.uri} resource={r}/>;
+                                    })}
+                                </div>}
+                            </div>
+                        </>}
+
+                        {mainTab == "agent" and <AgentPanel connection={connection}/>}
                     </>}
 
                     {connection.status == "disconnected" and <div className="flex flex-col items-center justify-center h-full gap-4 text-muted-foreground">
@@ -275,7 +305,7 @@ cl {
                     </div>}
                 </main>
 
-                {logsPanelOpen and <aside className="w-80 flex-shrink-0 border-l border-border bg-card/20 overflow-hidden flex flex-col">
+                {logsOpen and <aside className="w-80 flex-shrink-0 border-l border-border bg-card/20 overflow-hidden flex flex-col">
                     <HistoryPanel/>
                 </aside>}
             </div>
