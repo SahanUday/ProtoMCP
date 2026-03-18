@@ -43,7 +43,7 @@ jobs:
       - name: Install Jaseci packages
         run: |
           pip install --upgrade pip
-          pip install jaclang jac-client jac-scale jac-mcp
+          pip install jaclang jac-client jac-scale jac-mcp jasketch-mcp-server
 
       - name: Deploy jac-mcp-playground with jac-scale
         run: |
