@@ -1,20 +1,7 @@
-"""MCP Store – React Context, no external state library."""
-
-cl import from "react" { createContext, useContext }
+import from "react" { createContext, useContext }
 
 glob McpCtx: Any = createContext(None);
-glob MAX_HISTORY: int = 200;
-
 def:pub McpProvider(props: Any) -> JsxElement {
-    # ── MCP Connection State ──
-    has connections: list = [];
-    has activeConnectionId: Any = None;
-    has history: list = [];
-    has activeTab: str = "tools";
-    has selectedTool: Any = None;
-    has selectedPrompt: Any = None;
-    has selectedResource: Any = None;
-
     # ── LLM Agentic Mode State ──
     has chatMessages: Any = [];
     has agentRunning: bool = False;
@@ -28,43 +15,12 @@ def:pub McpProvider(props: Any) -> JsxElement {
         "maxTokens": 4096,
         "systemPrompt": "You are a helpful assistant that can use tools to help answer questions. When using tools, always explain what you're doing and why.",
         "maxIterations": 10,
+        "agentMode": "perTurn",
         "confirmMode": False,
         "enabledTools": None,
         "sessionKey": False
     };
     has totalTokenUsage: Any = {"prompt": 0, "completion": 0, "total": 0};
-
-    # ── MCP Connection Mutations ──
-    def addConnection(conn: Any) -> None {
-        connections = lambda(prev: Any) -> Any { return prev.concat([conn]); };
-    }
-    def removeConnection(id: Any) -> None {
-        connections = lambda(prev: Any) -> Any { return prev.filter(lambda(c: Any) -> Any { return c.id != id; }); };
-        activeConnectionId = lambda(prev: Any) -> Any {
-            if prev == id { return None; }
-            return prev;
-        };
-    }
-    def updateConnection(id: Any, patch: Any) -> None {
-        connections = lambda(prev: Any) -> Any {
-            return prev.map(lambda(c: Any) -> Any {
-                if c.id == id { return Object.assign({}, c, patch); }
-                return c;
-            });
-        };
-    }
-    def addHistoryEntry(hist_entry: Any) -> None {
-        history = lambda(prev: Any) -> Any { return [hist_entry].concat(prev).slice(0, MAX_HISTORY); };
-    }
-    def updateHistoryEntry(id: Any, patch: Any) -> None {
-        history = lambda(prev: Any) -> Any {
-            return prev.map(lambda(e: Any) -> Any {
-                if e.id == id { return Object.assign({}, e, patch); }
-                return e;
-            });
-        };
-    }
-    def clearHistory -> None { history = []; }
 
     # ── LLM Agentic Mode Mutations ──
     def addChatMessage(msg: Any) -> None {
@@ -104,26 +60,7 @@ def:pub McpProvider(props: Any) -> JsxElement {
     }
 
     store = {
-        # MCP connection
-        "connections": connections,
-        "activeConnectionId": activeConnectionId,
-        "addConnection": addConnection,
-        "removeConnection": removeConnection,
-        "updateConnection": updateConnection,
-        "setActiveConnection": lambda(id: Any) -> None { activeConnectionId = id; },
-        "history": history,
-        "addHistoryEntry": addHistoryEntry,
-        "updateHistoryEntry": updateHistoryEntry,
-        "clearHistory": clearHistory,
-        "activeTab": activeTab,
-        "setActiveTab": lambda(tab: Any) -> None { activeTab = tab; },
-        "selectedTool": selectedTool,
-        "setSelectedTool": lambda(t: Any) -> None { selectedTool = t; },
-        "selectedPrompt": selectedPrompt,
-        "setSelectedPrompt": lambda(p: Any) -> None { selectedPrompt = p; },
-        "selectedResource": selectedResource,
-        "setSelectedResource": lambda(r: Any) -> None { selectedResource = r; },
-        # LLM agent mode
+        "closeAddModal": closeAddModal,
         "chatMessages": chatMessages,
         "agentRunning": agentRunning,
         "agentTrace": agentTrace,
@@ -140,7 +77,6 @@ def:pub McpProvider(props: Any) -> JsxElement {
         "addTokenUsage": addTokenUsage,
         "setPendingConfirmation": updatePendingConfirmation
     };
-
     return <McpCtx.Provider value={store}>{props.children}</McpCtx.Provider>;
 }
 
