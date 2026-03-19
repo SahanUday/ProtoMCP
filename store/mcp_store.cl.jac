@@ -1,9 +1,10 @@
 """MCP Store – React Context, no external state library."""
 
-cl import from "react" { createContext, useContext }
+cl import from "react" { createContext, useContext, useEffect }
 
 glob McpCtx: Any = createContext(None);
 glob MAX_HISTORY: int = 200;
+glob CONN_STORAGE_KEY: str = "mcp_saved_connections";
 
 def:pub McpProvider(props: Any) -> JsxElement {
     # ── MCP Connection State ──
@@ -34,12 +35,43 @@ def:pub McpProvider(props: Any) -> JsxElement {
     };
     has totalTokenUsage: Any = {"prompt": 0, "completion": 0, "total": 0};
 
+    # Load saved connection configs from sessionStorage on mount.
+    # fromStorage flag lets McpReconnector distinguish these from newly added connections.
+    useEffect(lambda -> Any {
+        try {
+            raw = sessionStorage.getItem(CONN_STORAGE_KEY);
+            if raw {
+                saved = JSON.parse(raw);
+                if saved and saved.length > 0 {
+                    connections = saved.map(lambda(c: Any) -> Any {
+                        return {"id": c.id, "name": c.name, "url": c.url, "transport": c.transport, "auth": c.auth, "status": "disconnected", "serverInfo": None, "capabilities": None, "fromStorage": True};
+                    });
+                }
+            }
+        } except Exception as e {}
+        return lambda -> None {};
+    }, []);
+
     # ── MCP Connection Mutations ──
     def addConnection(conn: Any) -> None {
-        connections = lambda(prev: Any) -> Any { return prev.concat([conn]); };
+        connections = lambda(prev: Any) -> Any {
+            newConns = prev.concat([conn]);
+            configs = newConns.map(lambda(c: Any) -> Any {
+                return {"id": c.id, "name": c.name, "url": c.url, "transport": c.transport, "auth": c.auth};
+            });
+            sessionStorage.setItem(CONN_STORAGE_KEY, JSON.stringify(configs));
+            return newConns;
+        };
     }
     def removeConnection(id: Any) -> None {
-        connections = lambda(prev: Any) -> Any { return prev.filter(lambda(c: Any) -> Any { return c.id != id; }); };
+        connections = lambda(prev: Any) -> Any {
+            newConns = prev.filter(lambda(c: Any) -> Any { return c.id != id; });
+            configs = newConns.map(lambda(c: Any) -> Any {
+                return {"id": c.id, "name": c.name, "url": c.url, "transport": c.transport, "auth": c.auth};
+            });
+            sessionStorage.setItem(CONN_STORAGE_KEY, JSON.stringify(configs));
+            return newConns;
+        };
         activeConnectionId = lambda(prev: Any) -> Any {
             if prev == id { return None; }
             return prev;

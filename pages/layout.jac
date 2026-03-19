@@ -1,8 +1,10 @@
 """Root layout – shared header across all pages."""
 
 cl import from "@jac/runtime" { Outlet, Link }
+cl import from "react" { useEffect }
 cl import from "lucide-react" { Sun, Moon, ExternalLink, Github, ChevronDown, BookOpen }
-cl import from ..store.mcp_store { McpProvider }
+cl import from ..store.mcp_store { McpProvider, useMcpStore }
+cl import from ..hooks.useMcpClient { useMcpClient }
 
 cl {
     def AppHeader() -> JsxElement {
@@ -85,8 +87,30 @@ cl {
         </header>;
     }
 
+    # Reconnects connections restored from sessionStorage on page load.
+    # Only targets connections with fromStorage=True to avoid conflicting
+    # with connections being manually added via ConnectModal.
+    def McpReconnector -> JsxElement {
+        connections = useMcpStore(lambda(s: Any) -> Any { return s.connections; });
+        client = useMcpClient();
+
+        useEffect(lambda -> Any {
+            toReconnect = connections.filter(lambda(c: Any) -> Any { return Boolean(c.fromStorage) and c.status == "disconnected"; });
+            for conn in toReconnect {
+                client.initialize(conn).then(lambda(ok: Any) -> Any {
+                    if ok { client.discoverCapabilities(conn); }
+                    return None;
+                });
+            }
+            return lambda -> None {};
+        }, [connections]);
+
+        return <span/>;
+    }
+
     def:pub layout -> JsxElement {
         return <McpProvider>
+            <McpReconnector/>
             <AppHeader/>
             <Outlet/>
         </McpProvider>;
