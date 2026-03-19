@@ -7,6 +7,14 @@ cl import from "lucide-react" {
 }
 cl import from ...store.mcp_store { useMcpStore }
 
+glob API_KEY_PLACEHOLDERS: Any = {
+    "openai": "sk-...",
+    "anthropic": "sk-ant-...",
+    "google": "AIza...",
+    "groq": "gsk_...",
+    "together": "..."
+};
+
 glob MODEL_SUGGESTIONS: Any = {
     "openai": ["gpt-4o", "gpt-4o-mini", "gpt-4-turbo", "o1-mini", "o3-mini"],
     "anthropic": ["claude-sonnet-4-20250514", "claude-haiku-4-20250414", "claude-opus-4-20250514"],
@@ -283,7 +291,7 @@ def:pub LlmConfigPanel -> JsxElement {
                         type={showKey and "text" or "password"}
                         value={localApiKey}
                         onChange={lambda(e: Any) -> None { localApiKey = e.target.value; }}
-                        placeholder="sk-..."
+                        placeholder={API_KEY_PLACEHOLDERS[localProvider] or "API key..."}
                         className="w-full bg-background border border-input rounded-lg px-3 py-2 pr-10 text-sm text-foreground font-mono placeholder-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring/50"
                     />
                     <button
