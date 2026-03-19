@@ -9,7 +9,8 @@ def:pub RegistryServerCard(props: Any) -> JsxElement {
     has copied: bool = False;
 
     def handleTestServer -> None {
-        params = f"url={encodeURIComponent(server.url)}&transport=streamable-http&auth={server.auth}&name={encodeURIComponent(server.name)}";
+        transportParam = "streamable-http" if server.transport == "http" else server.transport;
+        params = f"url={encodeURIComponent(server.url)}&transport={transportParam}&auth={server.auth}&name={encodeURIComponent(server.name)}";
         navigate(f"/testmcp?{params}");
     }
 
@@ -32,6 +33,21 @@ def:pub RegistryServerCard(props: Any) -> JsxElement {
     transportCls = transportColors[server.transport] if server.transport in transportColors else transportColors["http"];
     transportLabel = transportLabels[server.transport] if server.transport in transportLabels else server.transport.toUpperCase();
 
+    authColors = {
+        "none":    "text-success bg-success/10 border-success/20",
+        "bearer":  "text-warning bg-warning/10 border-warning/20",
+        "apikey":  "text-info bg-info/10 border-info/20",
+        "basic":   "text-muted-foreground bg-muted border-border"
+    };
+    authLabels = {
+        "none":   "NoAuth",
+        "bearer": "Bearer",
+        "apikey": "API Key",
+        "basic":  "Basic"
+    };
+    authCls   = authColors[server.auth] if server.auth in authColors else authColors["none"];
+    authLabel = authLabels[server.auth] if server.auth in authLabels else "Auth";
+
     return <div className="group relative bg-card border border-border rounded-xl overflow-hidden hover:border-primary/30 hover:shadow-lg hover:shadow-primary/5 transition-all duration-300 flex flex-col">
         <div className="absolute top-0 left-0 right-0 h-1 bg-gradient-to-r from-primary/60 via-primary/30 to-transparent opacity-0 group-hover:opacity-100 transition-opacity"/>
 
@@ -44,7 +60,7 @@ def:pub RegistryServerCard(props: Any) -> JsxElement {
                     <h3 className="text-sm font-semibold text-foreground truncate">{server.name}</h3>
                     <div className="flex items-center gap-1.5 mt-1.5 flex-wrap">
                         <span className="text-xs text-muted-foreground bg-muted px-2 py-0.5 rounded-full font-mono">{server.namespace}</span>
-                        <span className="text-xs text-success bg-success/10 px-2 py-0.5 rounded-full border border-success/20 font-medium">Official</span>
+                        <span className={f"text-xs font-medium px-2 py-0.5 rounded-full border {authCls}"}>{authLabel}</span>
                         <span className={f"inline-flex items-center gap-1 text-xs font-medium px-2 py-0.5 rounded-full border {transportCls}"}>{transportLabel}</span>
                     </div>
                 </div>
