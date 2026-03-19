@@ -59,8 +59,8 @@ def TraceEvent(props: Any) -> JsxElement {
     } elif evtType == "error" {
         summary = data.error or "Unknown error";
     } elif evtType == "final_response" {
-        content = data.content or "";
-        summary = content.length > 60 and content.substring(0, 60) + "..." or content;
+        finalContent = data.content or "";
+        summary = finalContent.length > 60 and finalContent.substring(0, 60) + "..." or finalContent;
     }
 
     return <div className="relative">
