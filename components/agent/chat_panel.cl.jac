@@ -9,6 +9,7 @@ cl import from "lucide-react" {
 cl import from ...store.mcp_store { useMcpStore }
 cl import from ...hooks.useAgentLoop { useAgentLoop }
 cl import from ...components.ui.json_viewer { JsonViewer }
+cl import from ...components.ui.markdown_renderer { MarkdownRenderer }
 
 
 # ── Tool Call Card ──────────────────────────────────────────────────────
@@ -112,7 +113,7 @@ def ChatMessage(props: Any) -> JsxElement {
             </div>
             <div className="max-w-[85%] space-y-2">
                 {msg.content and <div className="bg-card border border-border rounded-2xl rounded-bl-md px-4 py-2.5">
-                    <p className="text-sm text-foreground whitespace-pre-wrap">{msg.content}</p>
+                    <MarkdownRenderer content={msg.content}/>
                 </div>}
                 <div className="flex items-center gap-1.5 text-xs text-muted-foreground px-1">
                     <Wrench size={11}/>
@@ -132,7 +133,7 @@ def ChatMessage(props: Any) -> JsxElement {
                 <Bot size={13} className="text-info"/>
             </div>
             <div className="max-w-[85%] bg-card border border-border rounded-2xl rounded-bl-md px-4 py-2.5">
-                <p className="text-sm text-foreground whitespace-pre-wrap">{msg.content}</p>
+                <MarkdownRenderer content={msg.content}/>
             </div>
         </div>;
     }
