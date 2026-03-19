@@ -111,6 +111,46 @@ def:pub getMcpServers -> list {
             "url": "https://mcp.ferryhopper.com/mcp",
             "auth": "none",
             "authRequired": False
+        },
+        {
+            "id": "coingecko",
+            "name": "CoinGecko",
+            "namespace": "coingecko.com",
+            "transport": "sse",
+            "description": "CoinGecko cryptocurrency data platform MCP server. Access real-time and historical prices, market caps, trading volumes, and crypto metadata.",
+            "url": "https://mcp.api.coingecko.com/sse",
+            "auth": "none",
+            "authRequired": False
+        },
+        {
+            "id": "livescore",
+            "name": "LiveScore MCP",
+            "namespace": "livescoremcp.com",
+            "transport": "sse",
+            "description": "LiveScore MCP server. Access live sports scores, fixtures, results, and standings across major leagues and competitions.",
+            "url": "https://livescoremcp.com/sse",
+            "auth": "none",
+            "authRequired": False
+        },
+        {
+            "id": "tweetsave",
+            "name": "TweetSave",
+            "namespace": "tweetsave.org",
+            "transport": "sse",
+            "description": "TweetSave MCP server. Save, search, and retrieve tweets and social media content via SSE transport.",
+            "url": "https://mcp.tweetsave.org/sse",
+            "auth": "none",
+            "authRequired": False
+        },
+        {
+            "id": "cloudflare-docs",
+            "name": "Cloudflare Docs",
+            "namespace": "cloudflare.com",
+            "transport": "sse",
+            "description": "Official Cloudflare documentation MCP server. Query the full Cloudflare developer docs, Workers, Pages, R2, D1, and platform references.",
+            "url": "https://docs.mcp.cloudflare.com/sse",
+            "auth": "none",
+            "authRequired": False
         }
     ];
 }
