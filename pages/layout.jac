@@ -48,7 +48,7 @@ cl {
                             {docsOpen and <div className="fixed inset-0 z-40" onClick={lambda -> None { docsOpen = False; }}/>}
                             {docsOpen and <div className="absolute top-full left-0 mt-1 w-72 bg-card border border-border rounded-xl shadow-xl p-2 z-50">
                                 <a
-                                    href="https://blogs.jaseci.org/blog/2026/03/13/browser-automation-walkers-fix-it/"
+                                    href="https://blogs.jaseci.org/blog/2026/03/16/building-protomcp/"
                                     target="_blank"
                                     rel="noopener noreferrer"
                                     onClick={lambda -> None { docsOpen = False; }}
