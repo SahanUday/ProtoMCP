@@ -45,13 +45,6 @@ jobs:
           pip install --upgrade pip
           pip install jaclang jac-client jac-scale jac-mcp jasketch-mcp-server
 
-      - name: Install Bun
-        uses: oven-sh/setup-bun@v2
-
-      - name: Build PWA assets
-        run: |
-          jac build main.jac --client pwa
-
       - name: Deploy jac-mcp-playground with jac-scale
         run: |
           jac start main.jac --scale
