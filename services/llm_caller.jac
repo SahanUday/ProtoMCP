@@ -36,6 +36,8 @@ walker:pub llm_call {
             model_str = self.model;
             if self.provider == "anthropic" and not self.model.startswith("anthropic/") {
                 model_str = f"anthropic/{self.model}";
+            } elif self.provider == "google" and not self.model.startswith("gemini/") {
+                model_str = f"gemini/{self.model}";
             } elif self.provider == "groq" and not self.model.startswith("groq/") {
                 model_str = f"groq/{self.model}";
             } elif self.provider == "together" and not self.model.startswith("together_ai/") {

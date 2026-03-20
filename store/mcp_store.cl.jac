@@ -19,6 +19,7 @@ def:pub McpProvider(props: Any) -> JsxElement {
     # ── LLM Agentic Mode State ──
     has chatMessages: Any = [];
     has agentRunning: bool = False;
+    has agentSessionId: str = "";
     has agentTrace: Any = [];
     has pendingConfirmation: Any = None;
     has llmConfig: Any = {
@@ -113,6 +114,9 @@ def:pub McpProvider(props: Any) -> JsxElement {
     def updateAgentRunning(val: Any) -> None {
         agentRunning = val;
     }
+    def updateAgentSessionId(sid: Any) -> None {
+        agentSessionId = sid;
+    }
     def addAgentTraceEvent(evt: Any) -> None {
         agentTrace = lambda(prev: Any) -> Any { return prev.concat([evt]); };
     }
@@ -158,6 +162,7 @@ def:pub McpProvider(props: Any) -> JsxElement {
         # LLM agent mode
         "chatMessages": chatMessages,
         "agentRunning": agentRunning,
+        "agentSessionId": agentSessionId,
         "agentTrace": agentTrace,
         "pendingConfirmation": pendingConfirmation,
         "llmConfig": llmConfig,
@@ -166,6 +171,7 @@ def:pub McpProvider(props: Any) -> JsxElement {
         "replaceChatMessages": replaceChatMessages,
         "clearChat": clearChat,
         "setAgentRunning": updateAgentRunning,
+        "setAgentSessionId": updateAgentSessionId,
         "addAgentTraceEvent": addAgentTraceEvent,
         "clearAgentTrace": clearAgentTrace,
         "updateLlmConfig": updateLlmConfig,
