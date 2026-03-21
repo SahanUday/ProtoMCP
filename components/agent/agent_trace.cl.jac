@@ -31,7 +31,7 @@ def TraceEvent(props: Any) -> JsxElement {
 
     # Elapsed time since last event
     elapsed = "";
-    if prevTimestamp {
+    if prevTimestamp and evt.timestamp {
         diff = evt.timestamp - prevTimestamp;
         if diff >= 1000 {
             elapsed = String(Math.round(diff / 1000 * 10) / 10) + "s";

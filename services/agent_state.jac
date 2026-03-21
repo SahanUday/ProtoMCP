@@ -21,11 +21,12 @@ def init_session(session_id: str) -> None {
     );
 }
 
-def end_session(session_id: str) -> dict {
-    if session_id in _sessions {
-        _sessions[session_id].ev.set();
-        _sessions[session_id].cancel_ev.set();
-        _sessions.pop(session_id, None);
+def:pub end_session(session_id: str) -> dict {
+    s: Any = _sessions.pop(session_id, None);
+    if s {
+        s.cancel_ev.set();
+        s.ev.set();
+        s.q.put(None);
     }
     return {"ok": True};
 }
@@ -33,8 +34,9 @@ def end_session(session_id: str) -> dict {
 
 # ── Event queue ───────────────────────────────────────────────────────────────
 def enqueue_event(session_id: str, event: dict) -> None {
-    if session_id in _sessions {
-        _sessions[session_id].q.put(event);
+    s: Any = _sessions.get(session_id);
+    if s {
+        s.q.put(event);
     }
 }
 
@@ -44,8 +46,9 @@ def get_session_queue(session_id: str) -> Queue {
 
 def mark_complete(session_id: str) -> None {
     # None sentinel signals the SSE generator to stop
-    if session_id in _sessions {
-        _sessions[session_id].q.put(None);
+    s: Any = _sessions.get(session_id);
+    if s {
+        s.q.put(None);
     }
 }
 
@@ -60,26 +63,27 @@ def get_cancel_event(session_id: str) -> Any {
 
 # ── Confirmation gate ─────────────────────────────────────────────────────────
 def set_pending_confirmation(session_id: str) -> None {
-    if session_id in _sessions {
-        _sessions[session_id].ev.clear();
-        _sessions[session_id].confirmed = False;
+    s: Any = _sessions.get(session_id);
+    if s {
+        s.ev.clear();
+        s.confirmed = False;
     }
 }
 
 # Block the calling (background) thread until confirm_tool_call resolves it.
 def wait_for_confirmation(session_id: str, timeout: int = 120) -> bool {
-    if session_id not in _sessions {
+    s: Any = _sessions.get(session_id);
+    if not s {
         return False;
     }
-    s = _sessions[session_id];
     s.ev.wait(timeout=timeout);
     return s.confirmed;
 }
 
 # Frontend calls this after the user clicks Approve or Deny.
 def:pub confirm_tool_call(session_id: str, approved: str = "False") -> dict {
-    if session_id in _sessions {
-        s = _sessions[session_id];
+    s: Any = _sessions.get(session_id);
+    if s {
         s.confirmed = approved == "True";
         s.ev.set();
     }

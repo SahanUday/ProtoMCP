@@ -117,7 +117,14 @@ def:pub useAgentLoop -> Any {
                 }
             );
         } elif event.type == "pending_confirmation" {
-            llmStore.setPendingConfirmation(event.data);
+            data = event.data or {};
+            llmStore.setPendingConfirmation(
+                {
+                    "toolName": data.tool_name,
+                    "toolArgs": data.arguments,
+                    "serverName": data.server_name
+                }
+            );
         } elif event.type == "confirmation_resolved" {
             llmStore.setPendingConfirmation(None);
         }
@@ -314,11 +321,22 @@ def:pub useAgentLoop -> Any {
         );
     }
 
-    def abortAgent() -> None {
+    async def abortAgent() -> None {
+        if sessionIdRef.current {
+            fetch(
+                "/function/end_session",
+                {
+                    "method": "POST",
+                    "headers": {"Content-Type": "application/json"},
+                    "body": JSON.stringify({"session_id": sessionIdRef.current})
+                }
+            );
+        }
         if readerRef.current {
             readerRef.current.cancel();
             readerRef.current = None;
         }
+        llmStore.setPendingConfirmation(None);
         llmStore.setAgentRunning(False);
     }
 
