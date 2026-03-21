@@ -55,8 +55,8 @@ def _buildHistoryEntry(
     };
 }
 
-def _prependHistory(hist: list, newEntry: Any, cid: str) -> Any {
-    return hist.filter(lambda (s: str) -> bool { return s.id != cid; }).concat(
+def _prependHistory(hist: list, newEntry: dict, cid: str) -> Any {
+    return hist.filter(lambda (s: dict) -> bool { return s.id != cid; }).concat(
         [newEntry]
     ).slice(
         0, 5
@@ -64,7 +64,7 @@ def _prependHistory(hist: list, newEntry: Any, cid: str) -> Any {
 }
 
 def _removeFromHistory(hist: list, cid: str) -> Any {
-    return hist.filter(lambda (s: str) -> bool { return s.id != cid; });
+    return hist.filter(lambda (s: dict) -> bool { return s.id != cid; });
 }
 
 
@@ -75,7 +75,7 @@ def:pub useAgentLoop -> Any {
 
     sessionIdRef = useRef(None);
     conversationIdRef = useRef("");
-    readerRef = useRef(None);  # ReadableStreamDefaultReader – cancelled by abortAgent()
+    readerRef = useRef(None);
     firstMsgRef = useRef("");
 
     # ── Tool aggregation ──────────────────────────────────────────────────────
@@ -101,8 +101,6 @@ def:pub useAgentLoop -> Any {
     }
 
     # ── SSE stream reader ─────────────────────────────────────────────────────
-    # Dispatches each JSON-line event emitted by the streaming walker.
-    # Replaces the old setInterval(_poll, 500) approach entirely.
     def _dispatchEvent(event: Any) -> None {
         if event.type == "usage" {
             llmStore.addTokenUsage((event.data or {}).usage or {});
@@ -120,6 +118,8 @@ def:pub useAgentLoop -> Any {
             );
         } elif event.type == "pending_confirmation" {
             llmStore.setPendingConfirmation(event.data);
+        } elif event.type == "confirmation_resolved" {
+            llmStore.setPendingConfirmation(None);
         }
         llmStore.addAgentTraceEvent(event);
     }
@@ -134,9 +134,6 @@ def:pub useAgentLoop -> Any {
                 return;
             }
             if not response.body {
-                console.error(
-                    "[useAgentLoop] response.body is null — streaming not supported?"
-                );
                 llmStore.setAgentRunning(False);
                 return;
             }
@@ -151,10 +148,7 @@ def:pub useAgentLoop -> Any {
                     break;
                 }
                 buffer = buffer + decoder.decode(chunk.value, {"stream": True});
-                # Events are newline-delimited JSON lines
-                # Use String.fromCharCode(10) instead of "\n" — Jac double-escapes "\n" to "\\n"
                 lines = buffer.split(String.fromCharCode(10));
-                # Last element may be an incomplete line — keep it in the buffer
                 buffer = lines.pop();
                 for line in lines {
                     trimmed = line.trim();
@@ -173,8 +167,6 @@ def:pub useAgentLoop -> Any {
                 }
             }
         } except Exception as e {
-            # Stream was aborted or connection dropped — treat as done
-            console.error("[useAgentLoop] _readStream error:", e);
             llmStore.setAgentRunning(False);
         } finally {
             llmStore.setAgentRunning(False);
@@ -183,6 +175,9 @@ def:pub useAgentLoop -> Any {
 
     # ── Public API ────────────────────────────────────────────────────────────
     async def runAgentLoop(connection: Any, userMessage: str) -> None {
+        if llmStore.agentRunning {
+            return;
+        }
         if not conversationIdRef.current {
             conversationIdRef.current = crypto.randomUUID();
             firstMsgRef.current = userMessage;
@@ -195,6 +190,7 @@ def:pub useAgentLoop -> Any {
         sessionIdRef.current = crypto.randomUUID();
 
         userMsg = {"role": "user", "content": userMessage};
+        chatHistorySnapshot = llmStore.chatMessages;
         llmStore.addChatMessage(userMsg);
         llmStore.addAgentTraceEvent(
             {
@@ -214,7 +210,7 @@ def:pub useAgentLoop -> Any {
                         "session_id": sessionIdRef.current,
                         "llm_config": llmStore.llmConfig,
                         "message": userMessage,
-                        "chat_history": llmStore.chatMessages,
+                        "chat_history": chatHistorySnapshot,
                         "server_connections": _buildServerConnections()
                     }
                 )
@@ -225,6 +221,7 @@ def:pub useAgentLoop -> Any {
     }
 
     def newSession() -> None {
+        abortAgent();
         cid = conversationIdRef.current;
         if cid and firstMsgRef.current {
             newEntry = _buildHistoryEntry(
@@ -246,6 +243,7 @@ def:pub useAgentLoop -> Any {
     }
 
     def deleteCurrentSession() -> None {
+        abortAgent();
         cid = conversationIdRef.current;
         if cid {
             llmStore.setSessionHistory(
@@ -268,6 +266,7 @@ def:pub useAgentLoop -> Any {
     def loadSession(
         msgs: Any, trace: Any, tokenUsage: Any, sid: str, title: str
     ) -> None {
+        abortAgent();
         cid = conversationIdRef.current;
         if cid and firstMsgRef.current {
             newEntry = _buildHistoryEntry(
@@ -299,8 +298,6 @@ def:pub useAgentLoop -> Any {
                 )
             }
         );
-        # Stream resumes automatically — background thread unblocks and
-        # enqueues more events which flow through the still-open SSE connection.
     }
 
     async def denyToolCall() -> None {

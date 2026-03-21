@@ -6,9 +6,6 @@ agent_run:   spawned by the frontend, starts a background thread that runs the
              yields each event as a JSON line, so jac-scale wraps it in a
              StreamingResponse (text/event-stream) automatically.
 
-             No polling endpoint needed — events are pushed to the client the
-             instant they are produced.
-
 StreamEvent  →  ProtoMCP trace event mapping
 ─────────────────────────────────────────────────────────────
 byllm type    ProtoMCP type      Notes
@@ -46,7 +43,8 @@ import from services.agent_state {
     enqueue_event,
     get_session_queue,
     mark_complete,
-    end_session
+    end_session,
+    get_cancel_event
 }
 import from services.agent_node { AgentNode }
 
@@ -71,15 +69,13 @@ walker:pub agent_run {
         threading.Thread(target=self._run_agent, daemon=True).start();
 
         # SSE generator: drains the queue and yields each event as a JSON line.
-        # jac-scale detects the generator returned by report() and wraps it in
-        # StreamingResponse(media_type='text/event-stream') automatically.
         def stream -> str {
             q = get_session_queue(self.session_id);
             try {
                 while True {
                     event = q.get();
                     if event is None {
-                        break;  # sentinel: background thread is done
+                        break;
                     }
                     yield json.dumps(event) + "\n";
                 }
@@ -106,7 +102,8 @@ walker:pub agent_run {
                     temperature=self.llm_config.get("temperature", 0.7),
                     max_tokens=self.llm_config.get("maxTokens", 4096)
                 ),
-                confirm_mode=self.llm_config.get("confirmMode", False)
+                confirm_mode=self.llm_config.get("confirmMode", False),
+                max_react_iterations=self.llm_config.get("maxIterations", 10)
             );
 
             agent_nd.init_registry();
@@ -127,12 +124,16 @@ walker:pub agent_run {
             );
 
             final_chunks: list[str] = [];
+            cancel_ev = get_cancel_event(self.session_id);
 
             for event in agent_nd.run_agent(
                 message=self.message,
                 chat_history=self.chat_history,
                 system_prompt=self.llm_config.get("systemPrompt", "")
             ) {
+                if cancel_ev and cancel_ev.is_set() {
+                    break;
+                }
                 self._handle_event(event, final_chunks);
             }
 

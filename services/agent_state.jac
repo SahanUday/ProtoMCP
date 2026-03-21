@@ -3,10 +3,10 @@ import queue;
 import from typing { Any }
 
 # ── Session object (single-user) ─────────────────────────────────────────────────────────────
-# Using a typed obj so that _sessions[sid].q / .ev / .confirmed are fully typed.
 obj _Session {
     has q: Queue;  # queue.Queue  – holds StreamEvent dicts + None sentinel
     has ev: Event;  # threading.Event – confirmation gate
+    has cancel_ev: Event;  # threading.Event – abort/cancel signal for background thread
     has confirmed: bool = False;
 }
 
@@ -16,11 +16,17 @@ glob _sessions: dict[str, _Session] = {};
 
 # ── Lifecycle ─────────────────────────────────────────────────────────────────
 def init_session(session_id: str) -> None {
-    _sessions[session_id] = _Session(q=queue.Queue(), ev=threading.Event());
+    _sessions[session_id] = _Session(
+        q=queue.Queue(), ev=threading.Event(), cancel_ev=threading.Event()
+    );
 }
 
 def end_session(session_id: str) -> dict {
-    _sessions.pop(session_id, None);
+    if session_id in _sessions {
+        _sessions[session_id].ev.set();
+        _sessions[session_id].cancel_ev.set();
+        _sessions.pop(session_id, None);
+    }
     return {"ok": True};
 }
 
@@ -44,9 +50,15 @@ def mark_complete(session_id: str) -> None {
 }
 
 
-# ── Confirmation gate ─────────────────────────────────────────────────────────
+# ── Cancellation ──────────────────────────────────────────────────────────────
+# Returns the cancel_ev for the session so the background thread can hold a
+def get_cancel_event(session_id: str) -> Any {
+    s = _sessions.get(session_id);
+    return s.cancel_ev if s else None;
+}
 
-# Clear the event so the background thread will block on wait_for_confirmation.
+
+# ── Confirmation gate ─────────────────────────────────────────────────────────
 def set_pending_confirmation(session_id: str) -> None {
     if session_id in _sessions {
         _sessions[session_id].ev.clear();

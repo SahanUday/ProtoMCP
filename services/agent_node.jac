@@ -10,9 +10,10 @@ import from services.agent_state {
 node AgentNode {
     has session_id: str;
     has server_connections: list;  # [{id, name, url, transport, tools, headers}]
-    has llm: Model;  # byllm Model instance – set by agent_runner
+    has llm: Model;
     has tool_registry: dict = {};  # keyed by server_id__tool_name
     has confirm_mode: bool = False;
+    has max_react_iterations: int = 10;
 
     # ── Registry initialisation ───────────────────────────────────────────────
     def init_registry() -> None {
@@ -30,7 +31,6 @@ node AgentNode {
     }
 
     # ── Tool catalog for incl_info ────────────────────────────────────────────
-    # Returns a compact list the LLM can read to know every available tool.
     def _tool_catalog() -> list {
         catalog = [];
         for (key, entry) in self.tool_registry.items() {
@@ -49,7 +49,9 @@ node AgentNode {
     def use_mcp_tool(name: str, arguments: str) -> str {
         args: dict = {};
         try {
-            if arguments {
+            if isinstance(arguments, dict) {
+                args = arguments;
+            } elif arguments {
                 args = json.loads(arguments);
             }
         } except Exception {
@@ -61,8 +63,6 @@ node AgentNode {
         }
 
         # Confirmation gate — blocks until user responds if confirm_mode is on.
-        # Enqueue the event FIRST so the SSE stream delivers it to the client
-        # before the background thread blocks on wait_for_confirmation.
         if self.confirm_mode {
             enqueue_event(
                 self.session_id,
@@ -73,6 +73,9 @@ node AgentNode {
             );
             set_pending_confirmation(self.session_id);
             approved = wait_for_confirmation(self.session_id);
+            enqueue_event(
+                self.session_id, {"type": "confirmation_resolved", "data": {}}
+            );
             if not approved {
                 return f"Tool call '{name}' was denied by the user. Do not retry this tool.";
             }
@@ -108,7 +111,7 @@ node AgentNode {
     # ── Agent entry point ─────────────────────────────────────────────────────
     def run_agent(message: str, chat_history: list[dict], system_prompt: str) -> str by self.llm(
         tools=[self.use_mcp_tool],
-        max_react_iterations=10,
+        max_react_iterations=self.max_react_iterations,
         stream=True,
         logging=True,
         incl_info={

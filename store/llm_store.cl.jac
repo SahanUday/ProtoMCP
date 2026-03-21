@@ -1,8 +1,8 @@
 """LLM Store – React Context for LLM agent state only."""
-
-cl import from "react" { createContext, useContext }
+cl import from "react" { createContext, useContext, useEffect }
 
 glob LlmCtx: Any = createContext(None);
+glob SESSION_HISTORY_KEY: str = "mcp_agent_session_history";
 
 def:pub LlmProvider(props: Any) -> JsxElement {
     # ── LLM Agentic Mode State ──
@@ -26,9 +26,20 @@ def:pub LlmProvider(props: Any) -> JsxElement {
     has totalTokenUsage: Any = {"prompt": 0, "completion": 0, "total": 0};
 
     # ── Session History State ──
-    # Each entry: {id, title, createdAt, messages, trace, tokenUsage}
-    # Max 5 entries; managed entirely by useAgentLoop hook.
-    has sessionHistory: list = [];
+    has sessionHistory: Any = [];
+
+    useEffect(
+        lambda -> Any { try {
+            raw = sessionStorage.getItem(SESSION_HISTORY_KEY);
+            if raw {
+                saved = JSON.parse(raw);
+                if saved and saved.length > 0 {
+                    sessionHistory = saved.map(lambda (s: Any) -> Any { return s; });
+                }
+            }
+        } except Exception { }return lambda -> None { }; },
+        []
+    );
 
     # ── LLM Agentic Mode Mutations ──
     def addChatMessage(msg: Any) -> None {
@@ -69,10 +80,11 @@ def:pub LlmProvider(props: Any) -> JsxElement {
     }
 
     # ── Session History Mutations ──
-    # Array logic (filter/concat/slice) lives in useAgentLoop where Any-typed
-    # method chains work reliably; the store only holds and sets the value.
     def updateSessionHistory(hist: Any) -> None {
         sessionHistory = hist;
+        try {
+            sessionStorage.setItem(SESSION_HISTORY_KEY, JSON.stringify(hist));
+        } except Exception { }
     }
 
     # Restore a saved session into the active chat view.
