@@ -1,7 +1,11 @@
 import json;
 import from byllm.lib { Model }
 import from services.mcp_proxy { mcp_proxy }
-import from services.agent_state { set_pending_confirmation, wait_for_confirmation }
+import from services.agent_state {
+    enqueue_event,
+    set_pending_confirmation,
+    wait_for_confirmation
+}
 
 node AgentNode {
     has session_id: str;
@@ -56,9 +60,18 @@ node AgentNode {
             return f"Unknown tool '{name}'. Check available_mcp_tools in your context for valid names.";
         }
 
-        # Confirmation gate — blocks until user responds if confirm_mode is on
+        # Confirmation gate — blocks until user responds if confirm_mode is on.
+        # Enqueue the event FIRST so the SSE stream delivers it to the client
+        # before the background thread blocks on wait_for_confirmation.
         if self.confirm_mode {
-            set_pending_confirmation(self.session_id, name, args);
+            enqueue_event(
+                self.session_id,
+                {
+                    "type": "pending_confirmation",
+                    "data": {"tool_name": name, "arguments": args}
+                }
+            );
+            set_pending_confirmation(self.session_id);
             approved = wait_for_confirmation(self.session_id);
             if not approved {
                 return f"Tool call '{name}' was denied by the user. Do not retry this tool.";

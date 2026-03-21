@@ -1,21 +1,22 @@
 """useAgentLoop – thin frontend driver for the byllm-powered backend agent.
 
-Replaces the old per-turn frontend ReAct loop with a simple fire-and-poll
-pattern:
+Fire-and-stream pattern:
 
-  1. runAgentLoop  → POST /walker/agent_run   (returns immediately)
-  2. poll()        → POST /function/get_agent_events  (every 500 ms)
+  1. runAgentLoop  → POST /walker/agent_run
+                     response is text/event-stream — each line is a JSON event
+  2. stream reader  drains the response body in real-time (no polling)
   3. approveToolCall / denyToolCall → POST /function/confirm_tool_call
 
 Every event the backend emits is forwarded directly to addAgentTraceEvent,
 so the existing AgentTracePanel renders without any changes to its event
 format.  The 'final_response' event drives addChatMessage for chat history.
 
-Special event types added by byllm (new in the trace view):
+Special event types added by byllm (visible in the trace view):
   thought        – LLM reasoning text emitted before a tool call
   steps_done     – ReAct loop finished, streamed final answer follows
   response_chunk – one streamed token of the final answer
   usage          – aggregated + per-call token counts
+  pending_confirmation – agent waiting for user approval (confirm_mode only)
 """
 
 cl import from "react" { useRef }
@@ -40,9 +41,7 @@ def _buildAuthHeaders(auth: Any) -> Any {
     return h;
 }
 
-# ── Session history helpers (module-level so Any params work correctly) ────────
-
-# Build a history entry dict from raw session data.
+# ── Session history helpers ───────────────────────────────────────────────────
 def _buildHistoryEntry(
     cid: str, title: str, msgs: Any, trace: Any, tokenUsage: Any
 ) -> dict {
@@ -56,7 +55,6 @@ def _buildHistoryEntry(
     };
 }
 
-# Prepend a new entry to history, deduplicate by id, keep max 5.
 def _prependHistory(hist: list, newEntry: Any, cid: str) -> Any {
     return hist.filter(lambda (s: str) -> bool { return s.id != cid; }).concat(
         [newEntry]
@@ -65,7 +63,6 @@ def _prependHistory(hist: list, newEntry: Any, cid: str) -> Any {
     );
 }
 
-# Remove one session from the history list by id.
 def _removeFromHistory(hist: list, cid: str) -> Any {
     return hist.filter(lambda (s: str) -> bool { return s.id != cid; });
 }
@@ -76,18 +73,9 @@ def:pub useAgentLoop -> Any {
     mcpStore = useMcpStore();
     llmStore = useLlmStore();
 
-    # useRef gives stable objects that persist across re-renders.
-    # All closures reference the same ref objects regardless of when they were created.
-    sessionIdRef = useRef(None);  # backend run ID (new UUID per runAgentLoop call)
-    conversationIdRef = useRef(
-        ""
-    );  # conversation ID (stable across turns, used for history)
-    eventIndexRef = useRef(0);
-    pollIntervalRef = useRef(None);
-    abortRef = useRef(False);
-    pollActiveRef = useRef(False);  # guard: only one _poll runs at a time
-    # Title of the current conversation = first user message sent.
-    # Set once when conversationIdRef is assigned; cleared on newSession/delete/load.
+    sessionIdRef = useRef(None);
+    conversationIdRef = useRef("");
+    readerRef = useRef(None);  # ReadableStreamDefaultReader – cancelled by abortAgent()
     firstMsgRef = useRef("");
 
     # ── Tool aggregation ──────────────────────────────────────────────────────
@@ -112,98 +100,99 @@ def:pub useAgentLoop -> Any {
         );
     }
 
-    # ── Polling ───────────────────────────────────────────────────────────────
-    async def _poll() -> None {
-        # Guard: skip if a poll is already in flight. setInterval fires every
-        # 500 ms regardless of whether the previous async callback finished,
-        # so without this guard overlapping polls can call clearInterval on
-        # the *next* interval (created by approveToolCall) and kill polling.
-        if pollActiveRef.current or abortRef.current {
-            return;
-        }
-        pollActiveRef.current = True;
-
-        try {
-            resp = await fetch(
-                "/function/get_agent_events",
+    # ── SSE stream reader ─────────────────────────────────────────────────────
+    # Dispatches each JSON-line event emitted by the streaming walker.
+    # Replaces the old setInterval(_poll, 500) approach entirely.
+    def _dispatchEvent(event: Any) -> None {
+        if event.type == "usage" {
+            llmStore.addTokenUsage((event.data or {}).usage or {});
+        } elif event.type == "final_response" {
+            llmStore.addChatMessage(
+                {"role": "assistant", "content": (event.data or {}).content or ""}
+            );
+        } elif event.type == "error" {
+            llmStore.addChatMessage(
                 {
-                    "method": "POST",
-                    "headers": {"Content-Type": "application/json"},
-                    "body": JSON.stringify(
-                        {
-                            "session_id": sessionIdRef.current,
-                            "since_index": eventIndexRef.current
-                        }
-                    )
+                    "role": "system",
+                    "content": (event.data or {}).error or "An error occurred",
+                    "errorKind": (event.data or {}).errorKind
                 }
             );
-            envelope = await resp.json();
-            data = (envelope.data or {}).result or {};
+        } elif event.type == "pending_confirmation" {
+            llmStore.setPendingConfirmation(event.data);
+        }
+        llmStore.addAgentTraceEvent(event);
+    }
 
-            for event in (data.events or []) {
-                eventIndexRef.current = eventIndexRef.current + 1;
-
-                if event.type == "usage" {
-                    llmStore.addTokenUsage((event.data or {}).usage or {});
-                } elif event.type == "final_response" {
-                    llmStore.addChatMessage(
-                        {
-                            "role": "assistant",
-                            "content": (event.data or {}).content or ""
-                        }
-                    );
-                } elif event.type == "error" {
-                    llmStore.addChatMessage(
-                        {
-                            "role": "system",
-                            "content": (event.data or {}).error or "An error occurred",
-                            "errorKind": (event.data or {}).errorKind
-                        }
-                    );
-                }
-
-                llmStore.addAgentTraceEvent(event);
-            }
-
-            if data.pending_confirmation {
-                clearInterval(pollIntervalRef.current);
-                pollActiveRef.current = False;
-                llmStore.setPendingConfirmation(data.pending_confirmation);
-                return;
-            }
-
-            if not data.running {
-                clearInterval(pollIntervalRef.current);
-                pollActiveRef.current = False;
+    async def _readStream(response: Any) -> None {
+        try {
+            if not response.ok {
+                console.error(
+                    "[useAgentLoop] HTTP error:", response.status, response.statusText
+                );
                 llmStore.setAgentRunning(False);
                 return;
             }
-        } except Exception as e {
-            clearInterval(pollIntervalRef.current);
-            pollActiveRef.current = False;
-            llmStore.setAgentRunning(False);
-            return;
-        }
+            if not response.body {
+                console.error(
+                    "[useAgentLoop] response.body is null — streaming not supported?"
+                );
+                llmStore.setAgentRunning(False);
+                return;
+            }
+            reader = response.body.getReader();
+            readerRef.current = reader;
+            decoder = Reflect.construct(TextDecoder, []);
+            buffer = "";
 
-        pollActiveRef.current = False;
+            while True {
+                chunk = await reader.read();
+                if chunk.done {
+                    break;
+                }
+                buffer = buffer + decoder.decode(chunk.value, {"stream": True});
+                # Events are newline-delimited JSON lines
+                # Use String.fromCharCode(10) instead of "\n" — Jac double-escapes "\n" to "\\n"
+                lines = buffer.split(String.fromCharCode(10));
+                # Last element may be an incomplete line — keep it in the buffer
+                buffer = lines.pop();
+                for line in lines {
+                    trimmed = line.trim();
+                    if not trimmed {
+                        continue;
+                    }
+                    try {
+                        event = JSON.parse(trimmed);
+                        _dispatchEvent(event);
+                    } except Exception as parseErr {
+                        console.warn(
+                            "[useAgentLoop] failed to parse line:", trimmed, parseErr
+                        );
+                        continue;
+                    }
+                }
+            }
+        } except Exception as e {
+            # Stream was aborted or connection dropped — treat as done
+            console.error("[useAgentLoop] _readStream error:", e);
+            llmStore.setAgentRunning(False);
+        } finally {
+            llmStore.setAgentRunning(False);
+        }
     }
 
     # ── Public API ────────────────────────────────────────────────────────────
     async def runAgentLoop(connection: Any, userMessage: str) -> None {
-        # Start a fresh conversation if none is active.
-        # conversationIdRef is stable across turns; sessionIdRef is a new backend run each time.
         if not conversationIdRef.current {
             conversationIdRef.current = crypto.randomUUID();
             firstMsgRef.current = userMessage;
             llmStore.setAgentSessionId(conversationIdRef.current);
         }
 
-        abortRef.current = False;
         llmStore.setAgentRunning(True);
         llmStore.clearAgentTrace();
 
         sessionIdRef.current = crypto.randomUUID();
-        eventIndexRef.current = 0;
 
         userMsg = {"role": "user", "content": userMessage};
         llmStore.addChatMessage(userMsg);
@@ -215,7 +204,7 @@ def:pub useAgentLoop -> Any {
             }
         );
 
-        await fetch(
+        response = await fetch(
             "/walker/agent_run",
             {
                 "method": "POST",
@@ -232,10 +221,9 @@ def:pub useAgentLoop -> Any {
             }
         );
 
-        pollIntervalRef.current = setInterval(_poll, 500);
+        await _readStream(response);
     }
 
-    # Save current conversation to history then start a blank one.
     def newSession() -> None {
         cid = conversationIdRef.current;
         if cid and firstMsgRef.current {
@@ -253,44 +241,33 @@ def:pub useAgentLoop -> Any {
         firstMsgRef.current = "";
         conversationIdRef.current = "";
         sessionIdRef.current = None;
-        eventIndexRef.current = 0;
         llmStore.clearChat();
         llmStore.setAgentSessionId("");
     }
 
-    # Delete active backend session + clear UI (no history save).
-    async def deleteCurrentSession() -> None {
-        sid = sessionIdRef.current;
-        if sid {
-            await fetch(
-                "/function/delete_session",
-                {
-                    "method": "POST",
-                    "headers": {"Content-Type": "application/json"},
-                    "body": JSON.stringify({"session_id": sid})
-                }
+    def deleteCurrentSession() -> None {
+        cid = conversationIdRef.current;
+        if cid {
+            llmStore.setSessionHistory(
+                _removeFromHistory(llmStore.sessionHistory, cid)
             );
         }
         firstMsgRef.current = "";
         conversationIdRef.current = "";
         sessionIdRef.current = None;
-        eventIndexRef.current = 0;
         llmStore.clearChat();
         llmStore.setAgentSessionId("");
     }
 
-    # Remove a history entry from the list (backend sessions auto-evict).
     async def deleteHistorySession(sessionId: str) -> None {
         llmStore.setSessionHistory(
             _removeFromHistory(llmStore.sessionHistory, sessionId)
         );
     }
 
-    # Auto-save current conversation to history, then restore the chosen one.
     def loadSession(
         msgs: Any, trace: Any, tokenUsage: Any, sid: str, title: str
     ) -> None {
-        # Save current conversation before switching (only if there's content).
         cid = conversationIdRef.current;
         if cid and firstMsgRef.current {
             newEntry = _buildHistoryEntry(
@@ -304,13 +281,10 @@ def:pub useAgentLoop -> Any {
                 _prependHistory(llmStore.sessionHistory, newEntry, cid)
             );
         }
-
-        # Restore the chosen session.
         llmStore.loadSession(msgs, trace, tokenUsage, sid);
         conversationIdRef.current = sid;
         firstMsgRef.current = title;
         sessionIdRef.current = None;
-        eventIndexRef.current = 0;
     }
 
     async def approveToolCall() -> None {
@@ -325,7 +299,8 @@ def:pub useAgentLoop -> Any {
                 )
             }
         );
-        pollIntervalRef.current = setInterval(_poll, 500);
+        # Stream resumes automatically — background thread unblocks and
+        # enqueues more events which flow through the still-open SSE connection.
     }
 
     async def denyToolCall() -> None {
@@ -340,12 +315,13 @@ def:pub useAgentLoop -> Any {
                 )
             }
         );
-        pollIntervalRef.current = setInterval(_poll, 500);
     }
 
     def abortAgent() -> None {
-        abortRef.current = True;
-        clearInterval(pollIntervalRef.current);
+        if readerRef.current {
+            readerRef.current.cancel();
+            readerRef.current = None;
+        }
         llmStore.setAgentRunning(False);
     }
 

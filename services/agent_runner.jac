@@ -1,8 +1,13 @@
-"""Agent Runner – public walker + StreamEvent bridge.
+"""Agent Runner – streaming walker + StreamEvent bridge.
 
-agent_run:   spawned by the frontend, fires a background thread that runs the
-             full byllm ReAct loop and writes every StreamEvent into agent_state.
-             Returns immediately so the HTTP request is not blocked.
+agent_run:   spawned by the frontend, starts a background thread that runs the
+             full byllm ReAct loop and enqueues every StreamEvent into a
+             queue.Queue.  The walker's SSE generator drains that queue and
+             yields each event as a JSON line, so jac-scale wraps it in a
+             StreamingResponse (text/event-stream) automatically.
+
+             No polling endpoint needed — events are pushed to the client the
+             instant they are produced.
 
 StreamEvent  →  ProtoMCP trace event mapping
 ─────────────────────────────────────────────────────────────
@@ -27,6 +32,7 @@ byllm typed exceptions map directly to ProtoMCP's existing errorKind values:
 
 import threading;
 import time;
+import json;
 import from byllm.lib {
     StreamEvent,
     AuthenticationError,
@@ -37,9 +43,10 @@ import from byllm.lib {
 import from services.llm_factory { create_llm }
 import from services.agent_state {
     init_session,
-    append_event,
+    enqueue_event,
+    get_session_queue,
     mark_complete,
-    delete_session
+    end_session
 }
 import from services.agent_node { AgentNode }
 
@@ -54,16 +61,34 @@ walker:pub agent_run {
 
     can run with Root entry {
         if not self.session_id {
-            report {"ok": False, "error": "session_id is required"};
+            report {"error": "session_id is required"};
             disengage;
         }
-        title = self.message[:60] + "..." if len(self.message) > 60 else self.message;
-        init_session(self.session_id, title=title);
 
-        # Fire the ReAct loop in a daemon thread; return HTTP response right away
+        init_session(self.session_id);
+
+        # Fire the ReAct loop in a background thread; it enqueues events.
         threading.Thread(target=self._run_agent, daemon=True).start();
 
-        report {"ok": True, "session_id": self.session_id};
+        # SSE generator: drains the queue and yields each event as a JSON line.
+        # jac-scale detects the generator returned by report() and wraps it in
+        # StreamingResponse(media_type='text/event-stream') automatically.
+        def stream -> str {
+            q = get_session_queue(self.session_id);
+            try {
+                while True {
+                    event = q.get();
+                    if event is None {
+                        break;  # sentinel: background thread is done
+                    }
+                    yield json.dumps(event) + "\n";
+                }
+            } finally {
+                end_session(self.session_id);
+            }
+        }
+
+        report stream();
     }
 
     # ── Background thread ─────────────────────────────────────────────────────
@@ -71,7 +96,6 @@ walker:pub agent_run {
         ts = self._ts;
 
         try {
-            # Instantiate the agent node with a per-request LLM model
             agent_nd = AgentNode(
                 session_id=self.session_id,
                 server_connections=self.server_connections,
@@ -85,10 +109,9 @@ walker:pub agent_run {
                 confirm_mode=self.llm_config.get("confirmMode", False)
             );
 
-            # Pre-build the tool registry from already-fetched server connection data
             agent_nd.init_registry();
 
-            append_event(
+            enqueue_event(
                 self.session_id,
                 {
                     "type": "llm_call_start",
@@ -103,7 +126,6 @@ walker:pub agent_run {
                 }
             );
 
-            # Run the full ReAct loop – yields StreamEvent objects
             final_chunks: list[str] = [];
 
             for event in agent_nd.run_agent(
@@ -114,9 +136,8 @@ walker:pub agent_run {
                 self._handle_event(event, final_chunks);
             }
 
-            # Emit the assembled final response so the frontend can save it
             if final_chunks {
-                append_event(
+                enqueue_event(
                     self.session_id,
                     {
                         "type": "final_response",
@@ -126,7 +147,7 @@ walker:pub agent_run {
                 );
             }
         } except AuthenticationError as e {
-            append_event(
+            enqueue_event(
                 self.session_id,
                 {
                     "type": "error",
@@ -135,7 +156,7 @@ walker:pub agent_run {
                 }
             );
         } except RateLimitError as e {
-            append_event(
+            enqueue_event(
                 self.session_id,
                 {
                     "type": "error",
@@ -144,7 +165,7 @@ walker:pub agent_run {
                 }
             );
         } except ModelNotFoundError as e {
-            append_event(
+            enqueue_event(
                 self.session_id,
                 {
                     "type": "error",
@@ -153,7 +174,7 @@ walker:pub agent_run {
                 }
             );
         } except ByLLMError as e {
-            append_event(
+            enqueue_event(
                 self.session_id,
                 {
                     "type": "error",
@@ -164,7 +185,7 @@ walker:pub agent_run {
         } except Exception as e {
             import traceback;
             print(f"[agent_runner] unexpected error: {traceback.format_exc()}");
-            append_event(
+            enqueue_event(
                 self.session_id,
                 {
                     "type": "error",
@@ -173,7 +194,7 @@ walker:pub agent_run {
                 }
             );
         } finally {
-            mark_complete(self.session_id);
+            mark_complete(self.session_id);  # puts None sentinel → stream stops
         }
     }
 
@@ -184,12 +205,11 @@ walker:pub agent_run {
         d = event.data;
 
         if t == "tool_call" {
-            # Strip server_id prefix for display; keep full name in raw data
             parts = d.get("tool", "").split("__", 1);
             server = parts[0] if len(parts) == 2 else "unknown";
             tool = parts[1] if len(parts) == 2 else d.get("tool", "?");
 
-            append_event(
+            enqueue_event(
                 self.session_id,
                 {
                     "type": "tool_call",
@@ -206,7 +226,7 @@ walker:pub agent_run {
         } elif t == "tool_result" {
             parts = d.get("tool", "").split("__", 1);
             tool = parts[1] if len(parts) == 2 else d.get("tool", "?");
-            append_event(
+            enqueue_event(
                 self.session_id,
                 {
                     "type": "tool_result",
@@ -220,8 +240,7 @@ walker:pub agent_run {
                 }
             );
         } elif t == "thought" {
-            # LLM reasoning text before a tool call – visible in trace
-            append_event(
+            enqueue_event(
                 self.session_id,
                 {
                     "type": "thought",
@@ -233,9 +252,8 @@ walker:pub agent_run {
                 }
             );
         } elif t == "chunk" {
-            # One streamed token of the final answer
             chunks.append(d.get("content", ""));
-            append_event(
+            enqueue_event(
                 self.session_id,
                 {
                     "type": "response_chunk",
@@ -244,8 +262,7 @@ walker:pub agent_run {
                 }
             );
         } elif t == "steps_done" {
-            # ReAct loop finished; final answer streaming starts next
-            append_event(
+            enqueue_event(
                 self.session_id,
                 {
                     "type": "steps_done",
@@ -254,9 +271,8 @@ walker:pub agent_run {
                 }
             );
         } elif t == "usage" {
-            # Aggregated token usage across all LLM calls in this invocation
             total = d.get("total", {});
-            append_event(
+            enqueue_event(
                 self.session_id,
                 {
                     "type": "usage",
@@ -276,7 +292,6 @@ walker:pub agent_run {
 
     # ── Helpers ───────────────────────────────────────────────────────────────
     def _ts() -> int {
-        # Current time in milliseconds (matches JS Date.now()).
         return int(time.time() * 1000);
     }
 }
