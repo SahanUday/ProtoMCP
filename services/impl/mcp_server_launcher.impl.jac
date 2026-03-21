@@ -83,6 +83,22 @@ def _start_jasketch_server() -> Any {
         return None;
     }
 
+    # Skip if a server is already bound on port 3003 – avoids double-bind when
+    # a previous session's process is still alive and jac start is run again.
+    try {
+        import socket as _socket;
+        _chk = _socket.socket(_socket.AF_INET, _socket.SOCK_STREAM);
+        _chk.settimeout(1);
+        _already_up = _chk.connect_ex(("127.0.0.1", 3003)) == 0;
+        _chk.close();
+        if _already_up {
+            print("[jasketch-mcp] Port 3003 already in use — reusing existing server.");
+            return None;
+        }
+    } except Exception {
+        None;
+    }
+
     print("[jasketch-mcp] Starting built-in jasketch MCP server...");
 
     try {
