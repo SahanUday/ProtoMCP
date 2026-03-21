@@ -20,12 +20,15 @@ Special event types added by byllm (new in the trace view):
 
 cl import from "react" { useRef }
 cl import from ..store.mcp_store { useMcpStore }
+cl import from ..store.llm_store { useLlmStore }
 
 
 # ── Auth header builder (mirrors useMcpClient) ────────────────────────────────
 def _buildAuthHeaders(auth: Any) -> Any {
     h = {};
-    if not auth { return h; }
+    if not auth {
+        return h;
+    }
     if auth.type == "bearer" and auth.value {
         h.Authorization = "Bearer " + auth.value;
     } elif auth.type == "apikey" and auth.value {
@@ -37,44 +40,76 @@ def _buildAuthHeaders(auth: Any) -> Any {
     return h;
 }
 
+# ── Session history helpers (module-level so Any params work correctly) ────────
+
+# Build a history entry dict from raw session data.
+def _buildHistoryEntry(
+    cid: str, title: str, msgs: Any, trace: Any, tokenUsage: Any
+) -> dict {
+    return {
+        "id": cid,
+        "title": title,
+        "createdAt": Date.now(),
+        "messages": msgs,
+        "trace": trace,
+        "tokenUsage": tokenUsage
+    };
+}
+
+# Prepend a new entry to history, deduplicate by id, keep max 5.
+def _prependHistory(hist: list, newEntry: Any, cid: str) -> Any {
+    return hist.filter(lambda (s: str) -> bool { return s.id != cid; }).concat(
+        [newEntry]
+    ).slice(
+        0, 5
+    );
+}
+
+# Remove one session from the history list by id.
+def _removeFromHistory(hist: list, cid: str) -> Any {
+    return hist.filter(lambda (s: str) -> bool { return s.id != cid; });
+}
+
 
 # ── Hook ──────────────────────────────────────────────────────────────────────
-
 def:pub useAgentLoop -> Any {
-    store = useMcpStore();
+    mcpStore = useMcpStore();
+    llmStore = useLlmStore();
 
     # useRef gives stable objects that persist across re-renders.
     # All closures reference the same ref objects regardless of when they were created.
-    sessionIdRef    = useRef(None);
-    eventIndexRef   = useRef(0);
+    sessionIdRef = useRef(None);  # backend run ID (new UUID per runAgentLoop call)
+    conversationIdRef = useRef(
+        ""
+    );  # conversation ID (stable across turns, used for history)
+    eventIndexRef = useRef(0);
     pollIntervalRef = useRef(None);
-    abortRef        = useRef(False);
-    pollActiveRef   = useRef(False);  # guard: only one _poll runs at a time
+    abortRef = useRef(False);
+    pollActiveRef = useRef(False);  # guard: only one _poll runs at a time
+    # Title of the current conversation = first user message sent.
+    # Set once when conversationIdRef is assigned; cleared on newSession/delete/load.
+    firstMsgRef = useRef("");
 
     # ── Tool aggregation ──────────────────────────────────────────────────────
     def _buildServerConnections() -> Any {
-        enabledTools = store.llmConfig.enabledTools;
-        return store.connections
-            .filter(lambda(c: Any) -> Any { return c.status == "connected"; })
-            .map(lambda(c: Any) -> Any {
-                tools = (c.capabilities?.tools or []).filter(
-                    lambda(t: Any) -> Any {
-                        return not enabledTools or enabledTools.includes(t.name);
-                    }
-                );
-                authHeaders = _buildAuthHeaders(c.auth);
-                if c.sessionId {
-                    authHeaders["mcp-session-id"] = c.sessionId;
-                }
-                return {
-                    "id":        c.id,
-                    "name":      c.name,
-                    "url":       c.url,
-                    "transport": c.transport or "streamable-http",
-                    "tools":     tools,
-                    "headers":   authHeaders
-                };
-            });
+        enabledTools = llmStore.llmConfig.enabledTools;
+        return mcpStore.connections.filter(
+            lambda (c: Any) -> Any { return c.status == "connected"; }
+        ).map(
+            lambda (c: Any) -> Any { tools = (c.capabilities?.tools or []).filter(
+                lambda (t: Any) -> Any { return not enabledTools
+                or enabledTools.includes(t.name); }
+            );authHeaders = _buildAuthHeaders(c.auth);if c.sessionId {
+                authHeaders["mcp-session-id"] = c.sessionId;
+            }return {
+                "id": c.id,
+                "name": c.name,
+                "url": c.url,
+                "transport": c.transport or "streamable-http",
+                "tools": tools,
+                "headers": authHeaders
+            }; }
+        );
     }
 
     # ── Polling ───────────────────────────────────────────────────────────────
@@ -92,12 +127,14 @@ def:pub useAgentLoop -> Any {
             resp = await fetch(
                 "/function/get_agent_events",
                 {
-                    "method":  "POST",
+                    "method": "POST",
                     "headers": {"Content-Type": "application/json"},
-                    "body":    JSON.stringify({
-                        "session_id":  sessionIdRef.current,
-                        "since_index": eventIndexRef.current
-                    })
+                    "body": JSON.stringify(
+                        {
+                            "session_id": sessionIdRef.current,
+                            "since_index": eventIndexRef.current
+                        }
+                    )
                 }
             );
             envelope = await resp.json();
@@ -107,43 +144,44 @@ def:pub useAgentLoop -> Any {
                 eventIndexRef.current = eventIndexRef.current + 1;
 
                 if event.type == "usage" {
-                    store.addTokenUsage((event.data or {}).usage or {});
-
+                    llmStore.addTokenUsage((event.data or {}).usage or {});
                 } elif event.type == "final_response" {
-                    store.addChatMessage({
-                        "role":    "assistant",
-                        "content": (event.data or {}).content or ""
-                    });
-
+                    llmStore.addChatMessage(
+                        {
+                            "role": "assistant",
+                            "content": (event.data or {}).content or ""
+                        }
+                    );
                 } elif event.type == "error" {
-                    store.addChatMessage({
-                        "role":      "system",
-                        "content":   (event.data or {}).error or "An error occurred",
-                        "errorKind": (event.data or {}).errorKind
-                    });
+                    llmStore.addChatMessage(
+                        {
+                            "role": "system",
+                            "content": (event.data or {}).error or "An error occurred",
+                            "errorKind": (event.data or {}).errorKind
+                        }
+                    );
                 }
 
-                store.addAgentTraceEvent(event);
+                llmStore.addAgentTraceEvent(event);
             }
 
             if data.pending_confirmation {
                 clearInterval(pollIntervalRef.current);
                 pollActiveRef.current = False;
-                store.setPendingConfirmation(data.pending_confirmation);
+                llmStore.setPendingConfirmation(data.pending_confirmation);
                 return;
             }
 
             if not data.running {
                 clearInterval(pollIntervalRef.current);
                 pollActiveRef.current = False;
-                store.setAgentRunning(False);
+                llmStore.setAgentRunning(False);
                 return;
             }
-
         } except Exception as e {
             clearInterval(pollIntervalRef.current);
             pollActiveRef.current = False;
-            store.setAgentRunning(False);
+            llmStore.setAgentRunning(False);
             return;
         }
 
@@ -151,69 +189,174 @@ def:pub useAgentLoop -> Any {
     }
 
     # ── Public API ────────────────────────────────────────────────────────────
-
     async def runAgentLoop(connection: Any, userMessage: str) -> None {
-        abortRef.current = False;
-        store.setAgentRunning(True);
-        store.clearAgentTrace();
+        # Start a fresh conversation if none is active.
+        # conversationIdRef is stable across turns; sessionIdRef is a new backend run each time.
+        if not conversationIdRef.current {
+            conversationIdRef.current = crypto.randomUUID();
+            firstMsgRef.current = userMessage;
+            llmStore.setAgentSessionId(conversationIdRef.current);
+        }
 
-        # Set directly on the ref — synchronous, visible immediately in this closure
-        sessionIdRef.current  = crypto.randomUUID();
+        abortRef.current = False;
+        llmStore.setAgentRunning(True);
+        llmStore.clearAgentTrace();
+
+        sessionIdRef.current = crypto.randomUUID();
         eventIndexRef.current = 0;
 
         userMsg = {"role": "user", "content": userMessage};
-        store.addChatMessage(userMsg);
-        store.addAgentTraceEvent({
-            "type":      "user_message",
-            "timestamp": Date.now(),
-            "data":      {"content": userMessage}
-        });
+        llmStore.addChatMessage(userMsg);
+        llmStore.addAgentTraceEvent(
+            {
+                "type": "user_message",
+                "timestamp": Date.now(),
+                "data": {"content": userMessage}
+            }
+        );
 
-        await fetch("/walker/agent_run", {
-            "method":  "POST",
-            "headers": {"Content-Type": "application/json"},
-            "body": JSON.stringify({
-                "session_id":         sessionIdRef.current,
-                "llm_config":         store.llmConfig,
-                "message":            userMessage,
-                "chat_history":       store.chatMessages,
-                "server_connections": _buildServerConnections()
-            })
-        });
+        await fetch(
+            "/walker/agent_run",
+            {
+                "method": "POST",
+                "headers": {"Content-Type": "application/json"},
+                "body": JSON.stringify(
+                    {
+                        "session_id": sessionIdRef.current,
+                        "llm_config": llmStore.llmConfig,
+                        "message": userMessage,
+                        "chat_history": llmStore.chatMessages,
+                        "server_connections": _buildServerConnections()
+                    }
+                )
+            }
+        );
 
         pollIntervalRef.current = setInterval(_poll, 500);
     }
 
+    # Save current conversation to history then start a blank one.
+    def newSession() -> None {
+        cid = conversationIdRef.current;
+        if cid and firstMsgRef.current {
+            newEntry = _buildHistoryEntry(
+                cid,
+                firstMsgRef.current,
+                llmStore.chatMessages,
+                llmStore.agentTrace,
+                llmStore.totalTokenUsage
+            );
+            llmStore.setSessionHistory(
+                _prependHistory(llmStore.sessionHistory, newEntry, cid)
+            );
+        }
+        firstMsgRef.current = "";
+        conversationIdRef.current = "";
+        sessionIdRef.current = None;
+        eventIndexRef.current = 0;
+        llmStore.clearChat();
+        llmStore.setAgentSessionId("");
+    }
+
+    # Delete active backend session + clear UI (no history save).
+    async def deleteCurrentSession() -> None {
+        sid = sessionIdRef.current;
+        if sid {
+            await fetch(
+                "/function/delete_session",
+                {
+                    "method": "POST",
+                    "headers": {"Content-Type": "application/json"},
+                    "body": JSON.stringify({"session_id": sid})
+                }
+            );
+        }
+        firstMsgRef.current = "";
+        conversationIdRef.current = "";
+        sessionIdRef.current = None;
+        eventIndexRef.current = 0;
+        llmStore.clearChat();
+        llmStore.setAgentSessionId("");
+    }
+
+    # Remove a history entry from the list (backend sessions auto-evict).
+    async def deleteHistorySession(sessionId: str) -> None {
+        llmStore.setSessionHistory(
+            _removeFromHistory(llmStore.sessionHistory, sessionId)
+        );
+    }
+
+    # Auto-save current conversation to history, then restore the chosen one.
+    def loadSession(
+        msgs: Any, trace: Any, tokenUsage: Any, sid: str, title: str
+    ) -> None {
+        # Save current conversation before switching (only if there's content).
+        cid = conversationIdRef.current;
+        if cid and firstMsgRef.current {
+            newEntry = _buildHistoryEntry(
+                cid,
+                firstMsgRef.current,
+                llmStore.chatMessages,
+                llmStore.agentTrace,
+                llmStore.totalTokenUsage
+            );
+            llmStore.setSessionHistory(
+                _prependHistory(llmStore.sessionHistory, newEntry, cid)
+            );
+        }
+
+        # Restore the chosen session.
+        llmStore.loadSession(msgs, trace, tokenUsage, sid);
+        conversationIdRef.current = sid;
+        firstMsgRef.current = title;
+        sessionIdRef.current = None;
+        eventIndexRef.current = 0;
+    }
+
     async def approveToolCall() -> None {
-        store.setPendingConfirmation(None);
-        await fetch("/function/confirm_tool_call", {
-            "method":  "POST",
-            "headers": {"Content-Type": "application/json"},
-            "body":    JSON.stringify({"session_id": sessionIdRef.current, "approved": 1})
-        });
+        llmStore.setPendingConfirmation(None);
+        await fetch(
+            "/function/confirm_tool_call",
+            {
+                "method": "POST",
+                "headers": {"Content-Type": "application/json"},
+                "body": JSON.stringify(
+                    {"session_id": sessionIdRef.current, "approved": "True"}
+                )
+            }
+        );
         pollIntervalRef.current = setInterval(_poll, 500);
     }
 
     async def denyToolCall() -> None {
-        store.setPendingConfirmation(None);
-        await fetch("/function/confirm_tool_call", {
-            "method":  "POST",
-            "headers": {"Content-Type": "application/json"},
-            "body":    JSON.stringify({"session_id": sessionIdRef.current, "approved": 0})
-        });
+        llmStore.setPendingConfirmation(None);
+        await fetch(
+            "/function/confirm_tool_call",
+            {
+                "method": "POST",
+                "headers": {"Content-Type": "application/json"},
+                "body": JSON.stringify(
+                    {"session_id": sessionIdRef.current, "approved": "False"}
+                )
+            }
+        );
         pollIntervalRef.current = setInterval(_poll, 500);
     }
 
     def abortAgent() -> None {
         abortRef.current = True;
         clearInterval(pollIntervalRef.current);
-        store.setAgentRunning(False);
+        llmStore.setAgentRunning(False);
     }
 
     return {
-        "runAgentLoop":    runAgentLoop,
-        "abortAgent":      abortAgent,
+        "runAgentLoop": runAgentLoop,
+        "newSession": newSession,
+        "deleteCurrentSession": deleteCurrentSession,
+        "deleteHistorySession": deleteHistorySession,
+        "loadSession": loadSession,
+        "abortAgent": abortAgent,
         "approveToolCall": approveToolCall,
-        "denyToolCall":    denyToolCall
+        "denyToolCall": denyToolCall
     };
 }
