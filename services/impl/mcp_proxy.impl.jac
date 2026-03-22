@@ -10,7 +10,7 @@ impl mcp_proxy(
     if url == "builtin://jac-mcp" {
         url = "http://127.0.0.1:3002/mcp/";
     } elif url == "builtin://jasketch" {
-        url = "http://127.0.0.1:3003/mcp/";
+        url = "http://127.0.0.1:3010/mcp/";
     }
 
     request_headers = {
