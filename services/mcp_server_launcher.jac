@@ -14,6 +14,7 @@ import subprocess;
 import os;
 import sys;
 
+def _jasketch_mcp_is_ready() -> bool;
 def _start_builtin_servers() -> dict;
 
 glob _builtin_servers: dict = _start_builtin_servers();

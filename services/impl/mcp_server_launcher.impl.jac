@@ -5,6 +5,8 @@ returns a handle (thread or process) or None if unavailable. Adding a new
 built-in server = add one function + one call in _start_builtin_servers().
 """
 
+import atexit;
+
 impl _start_builtin_servers() -> dict {
     servers = {};
 
@@ -70,9 +72,27 @@ def _start_jac_mcp_server() -> Any {
 }
 
 
+impl _jasketch_mcp_is_ready() -> bool {
+    import urllib.request;
+    try {
+        req = urllib.request.Request(
+            "http://127.0.0.1:3010/mcp/",
+            data=b'{"jsonrpc":"2.0","id":"ping","method":"initialize","params":{"protocolVersion":"2025-03-26","capabilities":{},"clientInfo":{"name":"healthcheck","version":"0.1"}}}',
+            headers={"Content-Type": "application/json", "Accept": "application/json, text/event-stream"},
+            method="POST"
+        );
+        with urllib.request.urlopen(req, timeout=2) as resp {
+            return True;
+        }
+    } except OSError {
+        return False;
+    }
+}
+
+
 def _start_jasketch_server() -> Any {
     try {
-        import from jasketch_mcp.__main__ { run_server_http }
+        import jasketch_mcp;
     } except ImportError as e {
         print(f"[jasketch-mcp] jasketch-mcp-server not installed, skipping: {e}");
         return None;
@@ -80,30 +100,34 @@ def _start_jasketch_server() -> Any {
 
     print("[jasketch-mcp] Starting built-in jasketch MCP server...");
 
-    try {
-        os.environ["JASKETCH_MCP_PORT"] = "3010";
-        os.environ["JASKETCH_MCP_HOST"] = "127.0.0.1";
+    # If already running (stale process from a prior run), reuse it
+    if _jasketch_mcp_is_ready() {
+        print("[jasketch-mcp] Server already running on http://127.0.0.1:3010/mcp/ (reusing)");
+        return threading.Thread(target=lambda: None, daemon=True);
+    }
 
-        thread = threading.Thread(target=run_server_http, daemon=True);
+    try {
+        env = os.environ.copy();
+        env["JASKETCH_MCP_PORT"] = "3010";
+        env["JASKETCH_MCP_HOST"] = "127.0.0.1";
+        env["JASKETCH_MCP_TRANSPORT"] = "streamable-http";
+
+        proc = subprocess.Popen(
+            [sys.executable, "-m", "jasketch_mcp", "http"],
+            env=env
+        );
+        atexit.register(proc.terminate);
+
+        thread = threading.Thread(target=proc.wait, daemon=True);
         thread.start();
 
         ready = False;
         for i in range(20) {
             time.sleep(1);
-            try {
-                req = urllib.request.Request(
-                    "http://127.0.0.1:3010/mcp/",
-                    data=b'{"jsonrpc":"2.0","id":"ping","method":"initialize","params":{"protocolVersion":"2025-03-26","capabilities":{},"clientInfo":{"name":"healthcheck","version":"0.1"}}}',
-                    headers={"Content-Type": "application/json", "Accept": "application/json, text/event-stream"},
-                    method="POST"
-                );
-                with urllib.request.urlopen(req, timeout=2) as resp {
-                    print(f"[jasketch-mcp] Server is ready on http://127.0.0.1:3010/mcp/ (took {i+1}s)");
-                    ready = True;
-                    break;
-                }
-            } except Exception {
-                None;
+            if _jasketch_mcp_is_ready() {
+                print(f"[jasketch-mcp] Server is ready on http://127.0.0.1:3010/mcp/ (took {i+1}s)");
+                ready = True;
+                break;
             }
         }
 
