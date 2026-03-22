@@ -8,6 +8,8 @@ def:pub LlmProvider(props: Any) -> JsxElement {
     # ── LLM Agentic Mode State ──
     has chatMessages: list = [];
     has agentRunning: bool = False;
+    has agentStatus: str = "";
+    has streamingContent: str = "";
     has agentSessionId: str = "";
     has agentTrace: list = [];
     has pendingConfirmation: Any = None;
@@ -48,10 +50,21 @@ def:pub LlmProvider(props: Any) -> JsxElement {
     def replaceChatMessages(msgs: Any) -> None {
         chatMessages = msgs;
     }
+    def updateAgentStatus(status: str) -> None {
+        agentStatus = status;
+    }
+    def appendStreamingContent(chunk: str) -> None {
+        streamingContent = lambda (prev: Any) -> Any { return f"{prev}{chunk}"; };
+    }
+    def clearStreamingContent -> None {
+        streamingContent = "";
+    }
     def clearChat -> None {
         chatMessages = [];
         agentTrace = [];
         totalTokenUsage = {"prompt": 0, "completion": 0, "total": 0};
+        agentStatus = "";
+        streamingContent = "";
     }
     def updateAgentRunning(val: Any) -> None {
         agentRunning = val;
@@ -93,11 +106,15 @@ def:pub LlmProvider(props: Any) -> JsxElement {
         agentTrace = trace;
         totalTokenUsage = tokenUsage;
         agentSessionId = sessionId;
+        agentStatus = "";
+        streamingContent = "";
     }
 
     store = {
         "chatMessages": chatMessages,
         "agentRunning": agentRunning,
+        "agentStatus": agentStatus,
+        "streamingContent": streamingContent,
         "agentSessionId": agentSessionId,
         "agentTrace": agentTrace,
         "pendingConfirmation": pendingConfirmation,
@@ -108,6 +125,9 @@ def:pub LlmProvider(props: Any) -> JsxElement {
         "replaceChatMessages": replaceChatMessages,
         "clearChat": clearChat,
         "setAgentRunning": updateAgentRunning,
+        "setAgentStatus": updateAgentStatus,
+        "appendStreamingContent": appendStreamingContent,
+        "clearStreamingContent": clearStreamingContent,
         "setAgentSessionId": updateAgentSessionId,
         "addAgentTraceEvent": addAgentTraceEvent,
         "clearAgentTrace": clearAgentTrace,

@@ -105,10 +105,15 @@ def:pub useAgentLoop -> Any {
         if event.type == "usage" {
             llmStore.addTokenUsage((event.data or {}).usage or {});
         } elif event.type == "final_response" {
+            # Clear streaming state then commit the final message.
+            llmStore.setAgentStatus("");
+            llmStore.clearStreamingContent();
             llmStore.addChatMessage(
                 {"role": "assistant", "content": (event.data or {}).content or ""}
             );
         } elif event.type == "error" {
+            llmStore.setAgentStatus("");
+            llmStore.clearStreamingContent();
             llmStore.addChatMessage(
                 {
                     "role": "system",
@@ -127,6 +132,17 @@ def:pub useAgentLoop -> Any {
             );
         } elif event.type == "confirmation_resolved" {
             llmStore.setPendingConfirmation(None);
+        } elif event.type == "thought" {
+            llmStore.setAgentStatus("Thinking...");
+        } elif event.type == "tool_call" {
+            toolName = ((event.data or {}).name or "tool");
+            llmStore.setAgentStatus(f"Using tool: {toolName}");
+        } elif event.type == "tool_result" {
+            llmStore.setAgentStatus("Processing result...");
+        } elif event.type == "steps_done" {
+            llmStore.setAgentStatus("Writing response...");
+        } elif event.type == "response_chunk" {
+            llmStore.appendStreamingContent((event.data or {}).content or "");
         }
         llmStore.addAgentTraceEvent(event);
     }
@@ -192,6 +208,8 @@ def:pub useAgentLoop -> Any {
         }
 
         llmStore.setAgentRunning(True);
+        llmStore.setAgentStatus("Thinking...");
+        llmStore.clearStreamingContent();
         llmStore.clearAgentTrace();
 
         sessionIdRef.current = crypto.randomUUID();
@@ -337,6 +355,8 @@ def:pub useAgentLoop -> Any {
             readerRef.current = None;
         }
         llmStore.setPendingConfirmation(None);
+        llmStore.setAgentStatus("");
+        llmStore.clearStreamingContent();
         llmStore.setAgentRunning(False);
     }
 

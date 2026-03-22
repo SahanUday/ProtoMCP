@@ -308,6 +308,8 @@ def:pub ChatPanel(props: Any) -> JsxElement {
 
     chatMessages = useLlmStore(lambda (s: Any) -> Any { return s.chatMessages; });
     agentRunning = useLlmStore(lambda (s: Any) -> Any { return s.agentRunning; });
+    agentStatus = useLlmStore(lambda (s: Any) -> Any { return s.agentStatus; });
+    streamingContent = useLlmStore(lambda (s: Any) -> Any { return s.streamingContent; });
     totalTokenUsage = useLlmStore(lambda (s: Any) -> Any { return s.totalTokenUsage; });
     llmConfig = useLlmStore(lambda (s: Any) -> Any { return s.llmConfig; });
     pendingConfirmation = useLlmStore(
@@ -323,6 +325,14 @@ def:pub ChatPanel(props: Any) -> JsxElement {
             messagesEndRef.current.scrollIntoView({"behavior": "smooth"});
         }return lambda -> None { }; },
         [chatMessages.length]
+    );
+
+    # Auto-scroll during streaming (instant to keep up with tokens)
+    useEffect(
+        lambda -> Any { if messagesEndRef.current and streamingContent {
+            messagesEndRef.current.scrollIntoView({"behavior": "instant"});
+        }return lambda -> None { }; },
+        [streamingContent]
     );
 
     async def handleSend -> None {
@@ -380,11 +390,20 @@ def:pub ChatPanel(props: Any) -> JsxElement {
                     {agentRunning
                     and <div className="flex gap-2 mb-3">
                         <div
-                            className="w-7 h-7 rounded-full bg-info/10 flex items-center justify-center flex-shrink-0"
+                            className="w-7 h-7 rounded-full bg-info/10 flex items-center justify-center flex-shrink-0 mt-0.5"
                         >
                             <Loader2 size={13} className="text-info animate-spin"/>
                         </div>
-                        <div
+                        {streamingContent
+                        and <div
+                            className="max-w-[85%] bg-card border border-border rounded-2xl rounded-bl-md px-4 py-2.5"
+                        >
+                            <MarkdownRenderer content={streamingContent}/>
+                            <span
+                                className="inline-block w-0.5 h-3.5 bg-foreground/50 animate-pulse ml-0.5 align-text-bottom"
+                            />
+                        </div>
+                        or <div
                             className="bg-card/50 border border-border rounded-2xl rounded-bl-md px-4 py-2.5"
                         >
                             <div className="flex items-center gap-2">
@@ -392,10 +411,10 @@ def:pub ChatPanel(props: Any) -> JsxElement {
                                     className="w-1.5 h-1.5 rounded-full bg-primary animate-pulse"
                                 />
                                 <span className="text-xs text-muted-foreground">
-                                    Agent is thinking...
+                                    {agentStatus or "Agent is thinking..."}
                                 </span>
                             </div>
-                        </div>
+                        </div>}
                     </div>}
                     <div ref={messagesEndRef}/>
                 </>}

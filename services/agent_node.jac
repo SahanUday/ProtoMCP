@@ -1,4 +1,6 @@
 import json;
+import from typing { Annotated }
+import from pydantic.functional_validators { BeforeValidator }
 import from byllm.lib { Model }
 import from services.mcp_proxy { mcp_proxy }
 import from services.agent_state {
@@ -28,6 +30,15 @@ node AgentNode {
                 };
             }
         }
+
+        # Ensure LLM-sent dict/list arguments are auto-converted to JSON strings before validation
+        fn = getattr(self.use_mcp_tool, "__func__", self.use_mcp_tool);
+        getattr(fn, "__annotations__", {})["arguments"] = Annotated[
+            str,
+            BeforeValidator(
+                lambda v: json.dumps(v) if isinstance(v, (dict, list)) else v
+            )
+        ];
     }
 
     # ── Tool catalog for incl_info ────────────────────────────────────────────
