@@ -117,7 +117,40 @@ cl {
             <span/>;
     }
 
+    # Reconnects connections restored from sessionStorage on page load.
+    # Only targets connections with fromStorage=True to avoid conflicting
+    # with connections being manually added via ConnectModal.
+    def McpReconnector -> JsxElement {
+        connections = useMcpStore(lambda (s: Any) -> Any { return s.connections; });
+        client = useMcpClient();
+
+        useEffect(
+            lambda -> Any { toReconnect = connections.filter(
+                lambda (c: Any) -> Any { return Boolean(c.fromStorage)
+                and c.status == "disconnected"; }
+            );for conn in toReconnect {
+                client.initialize(conn).then(
+                    lambda (ok: Any) -> Any { if ok {
+                        client.discoverCapabilities(conn);
+                    }return None; }
+                );
+            }return lambda -> None { }; },
+            [connections]
+        );
+
+        return
+            <span/>;
+    }
+
     def:pub layout -> JsxElement {
+        return
+            <McpProvider>
+                <LlmProvider>
+                    <McpReconnector/>
+                    <AppHeader/>
+                    <Outlet/>
+                </LlmProvider>
+            </McpProvider>;
         return
             <McpProvider>
                 <LlmProvider>
