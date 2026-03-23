@@ -90,6 +90,20 @@ impl _jasketch_mcp_is_ready() -> bool {
 }
 
 
+def _resolve_python_exe(mod: Any) -> str {
+    # sys.executable may point to system Python when jac-scale activates the venv
+    # via sys.path only. Derive the correct Python from the module's install location:
+    # mod.__file__ = {venv}/lib/python3.x/site-packages/<pkg>/__init__.py
+    pkg_dir = os.path.abspath(mod.__file__);
+    venv_root = os.path.dirname(os.path.dirname(os.path.dirname(os.path.dirname(os.path.dirname(pkg_dir)))));
+    venv_python = os.path.join(venv_root, "bin", "python");
+    if os.path.exists(venv_python) {
+        return venv_python;
+    }
+    return sys.executable;
+}
+
+
 def _start_jasketch_server() -> Any {
     try {
         import jasketch_mcp;
@@ -107,13 +121,16 @@ def _start_jasketch_server() -> Any {
     }
 
     try {
+        python_exe = _resolve_python_exe(jasketch_mcp);
+        print(f"[jasketch-mcp] Using Python: {python_exe}");
+
         env = os.environ.copy();
         env["JASKETCH_MCP_PORT"] = "3010";
         env["JASKETCH_MCP_HOST"] = "127.0.0.1";
         env["JASKETCH_MCP_TRANSPORT"] = "streamable-http";
 
         proc = subprocess.Popen(
-            [sys.executable, "-m", "jasketch_mcp", "http"],
+            [python_exe, "-m", "jasketch_mcp", "http"],
             env=env,
             stdout=subprocess.PIPE,
             stderr=subprocess.STDOUT
