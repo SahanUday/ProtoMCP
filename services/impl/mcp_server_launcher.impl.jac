@@ -114,8 +114,15 @@ def _start_jasketch_server() -> Any {
 
         proc = subprocess.Popen(
             [sys.executable, "-m", "jasketch_mcp", "http"],
-            env=env
+            env=env,
+            stdout=subprocess.PIPE,
+            stderr=subprocess.STDOUT
         );
+
+        threading.Thread(
+            target=lambda: [print(f"[jasketch-mcp] {line.decode().rstrip()}") for line in iter(proc.stdout.readline, b"")],
+            daemon=True
+        ).start();
         atexit.register(proc.terminate);
 
         thread = threading.Thread(target=proc.wait, daemon=True);
