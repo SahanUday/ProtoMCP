@@ -69,7 +69,9 @@ def:pub useMcpClient -> Any {
             addHistoryEntry(histEntry);
 
             try {
-                fetchResp = await fetch(MCP_PROXY_ENDPOINT, {
+                base_url = globalThis.__JAC_API_BASE_URL__;
+                server_path = (base_url + MCP_PROXY_ENDPOINT) if base_url else MCP_PROXY_ENDPOINT;
+                fetchResp = await fetch(server_path, {
                     "method": "POST",
                     "headers": {"Content-Type": "application/json"},
                     "body": JSON.stringify({
