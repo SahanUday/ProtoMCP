@@ -75,10 +75,9 @@ graph TB
     end
 
     User --> UI
-    UI -->|"tool calls"| Proxy
     UI -->|"agent requests"| Agent
     Proxy <-->|"JSON-RPC"| MCP
-    Agent -->|"tool use"| Proxy
+    Agent <-->|"tool use"| Proxy
     Agent <-->|"chat"| LLM
     Agent -->|"streaming trace"| UI
 ```
