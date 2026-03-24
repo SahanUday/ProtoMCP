@@ -30,11 +30,11 @@ ProtoMCP is a browser-based inspector for MCP servers. Point it at any MCP serve
 
 ## What it does
 
-### Explore Mode:
-connects to any MCP server over Streamable HTTP or SSE. Once connected, ProtoMCP discovers all capabilities automatically and generates input forms from the server's JSON Schema — so you can invoke tools, preview prompts, and browse resources without writing a single line of code. Every request and response is logged with timing data in a live panel alongside.
+### Explore Mode
+Connects to any MCP server over Streamable HTTP or SSE. Once connected, ProtoMCP discovers all capabilities automatically and generates input forms from the server's JSON Schema — so you can invoke tools, preview prompts, and browse resources without writing a single line of code. Every request and response is logged with timing data in a live panel alongside.
 
-### Agent Mode:
-drops an AI assistant on top of your connected servers. Pick a provider (OpenAI, Anthropic, Gemini, Groq, or others), write a prompt, and watch the agent reason and call tools across all connected servers in real time. You can require confirmation before each tool call if you want to stay in the loop — useful when the tools have side effects.
+### Agent Mode
+Drops an AI assistant on top of your connected servers. Pick a provider (OpenAI, Anthropic, Gemini, Groq, or others), write a prompt, and watch the agent reason and call tools across all connected servers in real time. You can require confirmation before each tool call if you want to stay in the loop — useful when the tools have side effects.
 
 Multiple servers can be connected at the same time. Tools and resources from all of them are aggregated into a single workspace, so you can mix and match across servers in a single agent session.
 
@@ -47,12 +47,50 @@ Multiple servers can be connected at the same time. Tools and resources from all
 **Run locally:**
 
 ```bash
-pip install jaclang jac-client byllm jac-mcp jasketch-mcp-server
+pip install jaclang==0.12.0 jac-client==1.0.7 byllm jac-mcp jasketch-mcp-server
 git clone https://github.com/SahanUday/ProtoMCP.git && cd ProtoMCP
 jac start main.jac
 ```
 
 Open [http://localhost:8000](http://localhost:8000). To connect a local MCP server, see the [ngrok tunnel guide](https://protomcp.io/docs/connect_mcp/local).
+
+## Supported Servers
+
+| Name | Transport | Auth | URL |
+|------|-----------|------|-----|
+| GitHub Copilot | HTTP | Bearer | `api.githubcopilot.com/mcp/` |
+| CoinGecko | SSE | None | `mcp.api.coingecko.com/sse` |
+| Exa Search | HTTP | None | `mcp.exa.ai/mcp` |
+| Hugging Face | HTTP | None | `hf.co/mcp` |
+| Astro Docs | HTTP | None | `mcp.docs.astro.build/mcp` |
+| Cloudflare Docs | SSE | None | `docs.mcp.cloudflare.com/sse` |
+| Manifold Markets | HTTP | None | `api.manifold.markets/v0/mcp` |
+| Javadocs | HTTP | None | `javadocs.dev/mcp` |
+| Ferryhopper | HTTP | None | `mcp.ferryhopper.com/mcp` |
+| LiveScore | SSE | None | `livescoremcp.com/sse` |
+| TweetSave | SSE | None | `mcp.tweetsave.org/sse` |
+| WebZum | HTTP | None | `webzum.com/api/mcp` |
+| Remote MCP | HTTP | None | `mcp.remote-mcp.com` |
+
+**Built-in servers** (no URL required):
+- `jac-mcp` — Jac language validation, formatting, and docs
+- `jasketch` — Live diagram canvas
+
+## Transport Support
+
+| Transport | Description | Session Management |
+|-----------|-------------|-------------------|
+| **Streamable HTTP** | Modern, session-aware | Auto-managed via `mcp-session-id` header |
+| **SSE** | Legacy Server-Sent Events | Connection-based, auto-discovered |
+
+## Authentication
+
+| Type | Header Config |
+|------|---------------|
+| Bearer Token | `Authorization: Bearer <token>` |
+| API Key | Custom header name + value |
+| Basic Auth | `Authorization: Basic <base64>` |
+| None | No headers |
 
 ## Architecture
 
@@ -84,20 +122,83 @@ graph TB
 
 The Jac backend sits between the browser and remote MCP servers, handling CORS and session management so the UI can talk to any server without browser restrictions. In Agent Mode, the backend runs the ReAct loop, routing LLM calls and tool executions before streaming the trace back to the client.
 
+**Key Files:**
+- [`services/mcp_proxy.jac`](services/mcp_proxy.jac) — CORS proxy, SSE connection pooling
+- [`services/agent_runner.jac`](services/agent_runner.jac) — byllm ReAct loop with SSE streaming
+- [`services/llm_factory.jac`](services/llm_factory.jac) — Multi-provider LLM routing
+- [`hooks/useMcpClient.cl.jac`](hooks/useMcpClient.cl.jac) — JSON-RPC client with session caching
+- [`hooks/useAgentLoop.cl.jac`](hooks/useAgentLoop.cl.jac) — SSE stream reader, tool confirmation
+- [`store/mcp_store.cl.jac`](store/mcp_store.cl.jac) — MCP connection state (React Context)
+- [`store/llm_store.cl.jac`](store/llm_store.cl.jac) — Agent state, chat history (React Context)
+- [`data/mcp_servers.cl.jac`](data/mcp_servers.cl.jac) — Server registry
+
 ## Tech Stack
 
 | Layer | Technology |
 |---|---|
-| Framework | [Jac (Jaseci)](https://jaseci.org) |
-| Frontend | jac-client |
+| Framework | [Jac (Jaseci)](https://jaseci.org) v0.12.0+ |
+| Frontend | jac-client v1.0.7 |
 | Styling | Tailwind CSS v4 |
 | Editor | Monaco Editor |
 | LLM routing | byllm |
 | Deployment | Kubernetes via jac-scale |
 
+## Configuration
+
+### Environment Variables
+
+| Variable | Description | Default |
+|----------|-------------|---------|
+| `JAC_SCALE_NAMESPACE` | K8s namespace for deployment | `jac-mcp-playground` |
+
+### Session Storage
+
+- `mcp_saved_connections` — Connection configs (URL, auth, transport)
+- `mcp_agent_session_history` — Agent chat sessions (max 5)
+
 ## Roadmap
 
 - **Desktop App** — Native app via [Tauri](https://tauri.app) with direct localhost and stdio transport support. See the [Desktop App docs](https://protomcp.io/docs/desktop_app).
+
+## Development
+
+```bash
+# Install dependencies
+pip install jaclang jac-client byllm jac-mcp jasketch-mcp-server
+
+# Start dev server
+jac start main.jac
+
+# Run with hot reload (file watching)
+pip install watchdog
+jac start main.jac --watch
+```
+
+### Adding a New Server to Registry
+
+Edit [`data/mcp_servers.cl.jac`](data/mcp_servers.cl.jac):
+
+```python
+{
+    "id": "your-server",
+    "name": "Your Server",
+    "namespace": "example.com",
+    "transport": "http",  # or "sse"
+    "description": "Single-line description",
+    "url": "https://example.com/mcp",
+    "auth": "bearer",  # or "apikey", "basic", "none"
+    "authRequired": True
+}
+```
+
+## Troubleshooting
+
+| Issue | Solution |
+|-------|----------|
+| "CORS error" | Use the backend `/api/mcp-proxy` instead of direct server URLs |
+| "Session expired" | Reconnect — SSE sessions timeout after inactivity |
+| "Tool not found" | Check transport compatibility — some tools are HTTP-only |
+| Agent stuck on "Thinking..." | Click abort — max iterations may have been reached |
 
 ## Contributing
 
