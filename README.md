@@ -30,9 +30,11 @@ ProtoMCP is a browser-based inspector for MCP servers. Point it at any MCP serve
 
 ## What it does
 
-**Explore Mode** connects to any MCP server over Streamable HTTP or SSE. Once connected, ProtoMCP discovers all capabilities automatically and generates input forms from the server's JSON Schema — so you can invoke tools, preview prompts, and browse resources without writing a single line of code. Every request and response is logged with timing data in a live panel alongside.
+### Explore Mode:
+connects to any MCP server over Streamable HTTP or SSE. Once connected, ProtoMCP discovers all capabilities automatically and generates input forms from the server's JSON Schema — so you can invoke tools, preview prompts, and browse resources without writing a single line of code. Every request and response is logged with timing data in a live panel alongside.
 
-**Agent Mode** drops an AI assistant on top of your connected servers. Pick a provider (OpenAI, Anthropic, Gemini, Groq, or others), write a prompt, and watch the agent reason and call tools across all connected servers in real time. You can require confirmation before each tool call if you want to stay in the loop — useful when the tools have side effects.
+### Agent Mode:
+drops an AI assistant on top of your connected servers. Pick a provider (OpenAI, Anthropic, Gemini, Groq, or others), write a prompt, and watch the agent reason and call tools across all connected servers in real time. You can require confirmation before each tool call if you want to stay in the loop — useful when the tools have side effects.
 
 Multiple servers can be connected at the same time. Tools and resources from all of them are aggregated into a single workspace, so you can mix and match across servers in a single agent session.
 
@@ -55,7 +57,7 @@ Open [http://localhost:8000](http://localhost:8000). To connect a local MCP serv
 ## Architecture
 
 ```mermaid
-graph LR
+graph TB
     User(["User"])
 
     subgraph Browser["Browser"]
