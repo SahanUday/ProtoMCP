@@ -26,7 +26,14 @@
 
 ---
 
-ProtoMCP is a browser-based inspector for MCP servers. Point it at any MCP server — local or remote — and you get a full UI to browse tools, prompts, and resources, fire requests, and watch every JSON-RPC exchange in real time. No extensions, no config files, no local setup required.
+ProtoMCP is a browser-based inspector for MCP servers. Point it at any MCP server — local or remote — and you get a full UI to browse tools, prompts, and resources, fire requests, and watch every JSON-RPC exchange in real time.
+
+## Why ProtoMCP?
+
+- **Browser-only** — No native app, no extensions, no localhost stdio gaps
+- **Multi-server** — Connect 13+ public MCP servers in a single workspace
+- **Real-time trace** — Watch every JSON-RPC exchange live (Claude Desktop doesn't show this)
+- **Zero-config introspection** — Auto-discovers tools, prompts, resources from schemas
 
 ## What it does
 
@@ -54,27 +61,19 @@ jac start main.jac
 
 Open [http://localhost:8000](http://localhost:8000). To connect a local MCP server, see the [ngrok tunnel guide](https://protomcp.io/docs/connect_mcp/local).
 
-## Supported Servers
+## Featured Servers
 
-| Name | Transport | Auth | URL |
-|------|-----------|------|-----|
-| GitHub Copilot | HTTP | Bearer | `api.githubcopilot.com/mcp/` |
-| CoinGecko | SSE | None | `mcp.api.coingecko.com/sse` |
-| Exa Search | HTTP | None | `mcp.exa.ai/mcp` |
-| Hugging Face | HTTP | None | `hf.co/mcp` |
-| Astro Docs | HTTP | None | `mcp.docs.astro.build/mcp` |
-| Cloudflare Docs | SSE | None | `docs.mcp.cloudflare.com/sse` |
-| Manifold Markets | HTTP | None | `api.manifold.markets/v0/mcp` |
-| Javadocs | HTTP | None | `javadocs.dev/mcp` |
-| Ferryhopper | HTTP | None | `mcp.ferryhopper.com/mcp` |
-| LiveScore | SSE | None | `livescoremcp.com/sse` |
-| TweetSave | SSE | None | `mcp.tweetsave.org/sse` |
-| WebZum | HTTP | None | `webzum.com/api/mcp` |
-| Remote MCP | HTTP | None | `mcp.remote-mcp.com` |
+| Name | Transport | Use Case |
+|------|-----------|----------|
+| GitHub Copilot | HTTP | Code-aware search |
+| Exa Search | HTTP | AI web search |
+| Hugging Face | HTTP | Model metadata |
 
 **Built-in servers** (no URL required):
 - `jac-mcp` — Jac language validation, formatting, and docs
 - `jasketch` — Live diagram canvas
+
+[View all 13+ servers →](https://protomcp.io/mcpregistry)
 
 ## Transport Support
 
@@ -120,17 +119,7 @@ graph TB
     Agent -->|"streaming trace"| UI
 ```
 
-The Jac backend sits between the browser and remote MCP servers, handling CORS and session management so the UI can talk to any server without browser restrictions. In Agent Mode, the backend runs the ReAct loop, routing LLM calls and tool executions before streaming the trace back to the client.
-
-**Key Files:**
-- [`services/mcp_proxy.jac`](services/mcp_proxy.jac) — CORS proxy, SSE connection pooling
-- [`services/agent_runner.jac`](services/agent_runner.jac) — byllm ReAct loop with SSE streaming
-- [`services/llm_factory.jac`](services/llm_factory.jac) — Multi-provider LLM routing
-- [`hooks/useMcpClient.cl.jac`](hooks/useMcpClient.cl.jac) — JSON-RPC client with session caching
-- [`hooks/useAgentLoop.cl.jac`](hooks/useAgentLoop.cl.jac) — SSE stream reader, tool confirmation
-- [`store/mcp_store.cl.jac`](store/mcp_store.cl.jac) — MCP connection state (React Context)
-- [`store/llm_store.cl.jac`](store/llm_store.cl.jac) — Agent state, chat history (React Context)
-- [`data/mcp_servers.cl.jac`](data/mcp_servers.cl.jac) — Server registry
+The Jac backend bypasses browser CORS restrictions by proxying all MCP requests. It pools SSE connections for legacy servers and runs the ReAct loop for Agent Mode, streaming the full trace back to the client in real time.
 
 ## Tech Stack
 
@@ -190,15 +179,6 @@ Edit [`data/mcp_servers.cl.jac`](data/mcp_servers.cl.jac):
     "authRequired": True
 }
 ```
-
-## Troubleshooting
-
-| Issue | Solution |
-|-------|----------|
-| "CORS error" | Use the backend `/api/mcp-proxy` instead of direct server URLs |
-| "Session expired" | Reconnect — SSE sessions timeout after inactivity |
-| "Tool not found" | Check transport compatibility — some tools are HTTP-only |
-| Agent stuck on "Thinking..." | Click abort — max iterations may have been reached |
 
 ## Contributing
 
