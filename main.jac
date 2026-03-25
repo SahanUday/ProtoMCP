@@ -11,7 +11,7 @@ cl import ".styles/globals.css";
 cl import from "react" { useEffect }
 cl import from .components.Analytics { Analytics }
 
-glob GA_MEASUREMENT_ID: str = "G-GZBGYX1V5F";
+cl glob GA_MEASUREMENT_ID: str = "G-GZBGYX1V5F";
 
 cl {
     def:pub app(children: Any = None) -> Any {
