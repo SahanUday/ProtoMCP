@@ -9,6 +9,7 @@ import from services.llm_factory { create_llm }
 
 cl import ".styles/globals.css";
 cl import from "react" { useEffect }
+cl import from .components.Analytics { Analytics }
 
 glob GA_MEASUREMENT_ID: str = "G-GZBGYX1V5F";
 
@@ -22,22 +23,19 @@ cl {
                     document.documentElement.classList.add("dark");
                 }
 
-                # Google Analytics injection
-                if GA_MEASUREMENT_ID != "G-XXXXXXXXXX" {
-                    # Create script tag for GA
-                    script = document.createElement("script");
-                    script.async = True;
-                    script.src = f"https://www.googletagmanager.com/gtag/js?id={GA_MEASUREMENT_ID}";
-                    document.head.appendChild(script);
+                # Google Analytics script injection (run once)
+                if GA_MEASUREMENT_ID != "" and not window.ga_initialized {
+                    window.ga_initialized = true;
 
-                    # Initialize gtag
+                    # Create gtag.js script tag
+                    script1 = document.createElement("script");
+                    script1.setAttribute("async", "true");
+                    script1.src = "https://www.googletagmanager.com/gtag/js?id=" + GA_MEASUREMENT_ID;
+                    document.head.appendChild(script1);
+
+                    # Create inline script for gtag initialization
                     script2 = document.createElement("script");
-                    script2.innerHTML = f"""
-                        window.dataLayer = window.dataLayer || [];
-                        function gtag(){{dataLayer.push(arguments);}}
-                        gtag('js', new Date());
-                        gtag('config', '{GA_MEASUREMENT_ID}');
-                    """;
+                    script2.text = "window.dataLayer=window.dataLayer||[];function gtag(){dataLayer.push(arguments);}gtag('js',new Date());gtag('config','" + GA_MEASUREMENT_ID + "',{send_page_view:false});";
                     document.head.appendChild(script2);
                 }
 
@@ -47,6 +45,7 @@ cl {
         );
         return
             <div className="min-h-screen bg-background text-foreground">
+                <Analytics/>
                 {children}
             </div>;
     }
