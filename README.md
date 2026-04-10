@@ -35,6 +35,18 @@ ProtoMCP is a browser-based inspector for MCP servers. Point it at any MCP serve
 - **Real-time trace** — Watch every JSON-RPC exchange live (Claude Desktop doesn't show this)
 - **Zero-config introspection** — Auto-discovers tools, prompts, resources from schemas
 
+## How It Compares
+
+| | ProtoMCP | Claude Desktop | MCP Inspector (CLI) |
+|---|:---:|:---:|:---:|
+| Browser-based | ✅ | ❌ | ❌ |
+| Multi-server | ✅ | ✅ | ❌ |
+| JSON-RPC trace | ✅ | ❌ | ✅ |
+| Auto-generated forms | ✅ | ❌ | ❌ |
+| Agent mode | ✅ | ✅ | ❌ |
+| Choose LLM provider | ✅ | ❌ | ❌ |
+| No install needed | ✅ | ❌ | ❌ |
+
 ## What it does
 
 ### Explore Mode
