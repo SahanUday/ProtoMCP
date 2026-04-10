@@ -15,11 +15,7 @@
 [Live Demo](https://protomcp.io/) &nbsp;·&nbsp; [Docs](https://protomcp.io/docs) &nbsp;·&nbsp; [Get Started](#get-started)
 
 <a href="https://protomcp.io/">
-  <picture>
-    <source media="(prefers-color-scheme: dark)" srcset="./assets/banner-dark.png">
-    <source media="(prefers-color-scheme: light)" srcset="./assets/banner-dark.png">
-    <img alt="ProtoMCP" src="./assets/banner-dark.png">
-  </picture>
+  <img alt="ProtoMCP Demo" src="./assets/protomcp.gif" width="800">
 </a>
 
 </div>
