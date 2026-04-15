@@ -205,3 +205,9 @@ MIT — see [LICENSE](LICENSE) for details.
 [Live Demo](https://protomcp.io/) &nbsp;·&nbsp; [Docs](https://protomcp.io/docs) &nbsp;·&nbsp; [MCP Specification](https://modelcontextprotocol.io) &nbsp;·&nbsp; [Jaseci Labs](https://github.com/jaseci-labs)
 
 </div>
+
+---
+
+<p align="center">
+  Built with ❤️ by <a href="https://github.com/jaseci-labs">Jaseci Labs</a>
+</p>
