@@ -15,7 +15,7 @@
 [Live Demo](https://protomcp.io/) &nbsp;·&nbsp; [Docs](https://protomcp.io/docs) &nbsp;·&nbsp; [Get Started](#get-started)
 
 <a href="https://protomcp.io/">
-  <video src="./assets/ProtoMCP Demo.mp4" width="800" autoplay muted loop playsinline></video>
+  <video src="./assets/protomcp-demo.mp4" width="800" autoplay muted loop playsinline></video>
 </a>
 
 </div>
