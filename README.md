@@ -61,13 +61,38 @@ Multiple servers can be connected at the same time. Tools and resources from all
 
 **Run locally:**
 
+### One-Command Bootstrap
+
 ```bash
-pip install jaclang==0.12.0 jac-client==1.0.7 byllm jac-mcp jasketch-mcp-server
-git clone https://github.com/SahanUday/ProtoMCP.git && cd ProtoMCP
+curl -sSL https://raw.githubusercontent.com/SahanUday/ProtoMCP/main/install.sh | bash
+```
+Once complete:
+
+```bash
 jac start main.jac
 ```
 
-Open [http://localhost:8000](http://localhost:8000). To connect a local MCP server, see the [ngrok tunnel guide](https://protomcp.io/docs/connect_mcp/local).
+Open [http://localhost:8000](http://localhost:8000) in your browser. To connect a local MCP server, see the [ngrok tunnel guide](https://protomcp.io/docs/connect_mcp/local).
+
+### Manual Installation
+
+If you prefer to set up manually:
+
+```bash
+# Clone repository
+git clone https://github.com/SahanUday/ProtoMCP.git
+cd ProtoMCP
+
+# Create and activate virtual environment
+python3 -m venv venv
+source venv/bin/activate
+
+# Install Python dependencies
+pip install jaclang>=0.14.0 jac-client>=0.3.12 jac-mcp>=0.1.10 jasketch-mcp-server>=1.0.5 byllm>=0.6.4
+
+# Start development server
+jac start main.jac
+```
 
 ## Featured Servers
 
@@ -159,15 +184,21 @@ The Jac backend bypasses browser CORS restrictions by proxying all MCP requests.
 
 ## Development
 
+Use the `install.sh` script to set up your development environment:
+
 ```bash
-# Install dependencies
-pip install jaclang jac-client byllm jac-mcp jasketch-mcp-server
+bash install.sh
+```
 
-# Start dev server
+Then start the development server:
+
+```bash
 jac start main.jac
+```
 
-# Run with hot reload (file watching)
-pip install watchdog
+To run with hot reload (file watching):
+
+```bash
 jac start main.jac --watch
 ```
 
