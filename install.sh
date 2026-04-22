@@ -50,10 +50,16 @@ pip install --upgrade pip
 
 # Install Python dependencies
 echo "Installing Python dependencies..."
-pip install jaclang>=0.14.0 jac-client>=0.3.12 jac-mcp>=0.1.10 jasketch-mcp-server>=1.0.5 byllm>=0.6.4 
+pip install "jaclang==0.14.0" \
+            "jac-client==0.3.12" \
+            "jac-mcp==0.1.10" \
+            "jasketch-mcp-server==1.0.5" \
+            "byllm==0.6.4"
 
 echo "Setup complete!"
 echo ""
 echo "Next steps:"
-echo "2. Start the development server: jac start main.jac"
-echo "3. Open http://localhost:8000 in your browser"
+echo "1. cd ProtoMCP"
+echo "2. source venv/bin/activate"
+echo "3. jac start main.jac"
+echo "4. Open http://localhost:8000"

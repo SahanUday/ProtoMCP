@@ -64,11 +64,13 @@ Multiple servers can be connected at the same time. Tools and resources from all
 ### One-Command Bootstrap
 
 ```bash
-curl -sSL https://raw.githubusercontent.com/SahanUday/ProtoMCP/main/install.sh | bash
+curl -sSL https://raw.githubusercontent.com/SahanUday/ProtoMCP/master/install.sh | bash
 ```
 Once complete:
 
 ```bash
+cd ProtoMCP
+source venv/bin/activate
 jac start main.jac
 ```
 
@@ -88,7 +90,7 @@ python3 -m venv venv
 source venv/bin/activate
 
 # Install Python dependencies
-pip install jaclang>=0.14.0 jac-client>=0.3.12 jac-mcp>=0.1.10 jasketch-mcp-server>=1.0.5 byllm>=0.6.4
+pip install jaclang==0.14.0 jac-client==0.3.12 jac-mcp==0.1.10 jasketch-mcp-server==1.0.5 byllm>=0.6.4
 
 # Start development server
 jac start main.jac
@@ -181,26 +183,6 @@ The Jac backend bypasses browser CORS restrictions by proxying all MCP requests.
 ## Roadmap
 
 - **Desktop App** — Native app via [Tauri](https://tauri.app) with direct localhost and stdio transport support. See the [Desktop App docs](https://protomcp.io/docs/desktop_app).
-
-## Development
-
-Use the `install.sh` script to set up your development environment:
-
-```bash
-bash install.sh
-```
-
-Then start the development server:
-
-```bash
-jac start main.jac
-```
-
-To run with hot reload (file watching):
-
-```bash
-jac start main.jac --watch
-```
 
 ### Adding a New Server to Registry
 
